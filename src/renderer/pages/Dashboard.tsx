@@ -17,7 +17,11 @@ export default function Dashboard() {
   const aggregates = useMonthlyTotals(expenses)
   const { byCategory, total, income } = useMonthlyTotalsForMonth(expenses, selectedMonth)
 
-  const totalByMonthData = aggregates.map((a) => ({ monthKey: a.monthKey, total: a.total }))
+  const totalByMonthData = aggregates.map((a) => ({
+    monthKey: a.monthKey,
+    income: a.income,
+    expenses: a.total,
+  }))
 
   const categoryTotals = categories.map((cat) => ({
     ...cat,
@@ -81,26 +85,33 @@ export default function Dashboard() {
       <h1 className="text-xl font-semibold mb-4">Dashboard</h1>
 
       <div className="grid gap-4 mb-6 md:grid-cols-2">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            {isCurrentMonth ? 'This month' : 'Month'} total ({selectedMonth})
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            {isCurrentMonth ? 'This month' : 'Month'} total
+            <span className="font-normal text-gray-500 dark:text-gray-400 ml-1">({selectedMonth})</span>
           </h2>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400">Income</span>
-              <span className="font-medium text-green-600 dark:text-green-400">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between items-center gap-3">
+              <span className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <ArrowDownCircle className="size-4 shrink-0 text-green-600 dark:text-green-400" aria-hidden />
+                Income
+              </span>
+              <span className="font-medium tabular-nums text-green-600 dark:text-green-400">
                 +${income.toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 dark:text-gray-400">Expenses</span>
-              <span className="font-medium text-red-600 dark:text-red-400">
+            <div className="flex justify-between items-center gap-3">
+              <span className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <ArrowUpCircle className="size-4 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
+                Expenses
+              </span>
+              <span className="font-medium tabular-nums text-red-600 dark:text-red-400">
                 −${total.toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300 font-medium">Net</span>
-              <span className={`text-lg font-semibold ${income - total >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            <div className="flex justify-between items-center gap-3 pt-3 mt-3 border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 -mx-5 px-5 py-3 rounded-b-xl">
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">Net</span>
+              <span className={`text-lg font-bold tabular-nums ${income - total >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {(income - total >= 0 ? '+' : '')}${(income - total).toFixed(2)}
               </span>
             </div>

@@ -96,7 +96,7 @@ export function SpendingByCategoryPieChart({
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip formatter={(v: number) => [`$${Number(v).toFixed(2)}`, '']} />
+            <Tooltip formatter={(v: number, name: string) => [`$${Number(v).toFixed(2)}`, name]} />
           </PieChart>
         </ResponsiveContainer>
       )}
@@ -173,12 +173,16 @@ export default function ChartPanel({
 }
 
 interface TotalByMonthChartProps {
-  data: { monthKey: string; total: number }[]
+  data: { monthKey: string; income: number; expenses: number }[]
   title: string
 }
 
 export function TotalByMonthChart({ data, title }: TotalByMonthChartProps) {
-  const chartData = data.map((d) => ({ name: d.monthKey, total: d.total }))
+  const chartData = data.map((d) => ({
+    name: d.monthKey,
+    income: d.income,
+    expenses: d.expenses,
+  }))
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <h3 className="text-lg font-medium mb-4">{title}</h3>
@@ -190,8 +194,39 @@ export function TotalByMonthChart({ data, title }: TotalByMonthChartProps) {
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis dataKey="name" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-            <Tooltip formatter={(v: number) => [`$${Number(v).toFixed(2)}`, 'Total']} />
-            <Bar dataKey="total" name="Total" fill="#3b82f6" />
+            <Tooltip
+              formatter={(v: number, name: string) => [
+                `${name === 'income' ? '+' : '−'}$${Number(v).toFixed(2)}`,
+                name === 'income' ? 'Income' : 'Expenses',
+              ]}
+              contentStyle={{
+                backgroundColor: 'rgb(255 255 255)',
+                color: 'rgb(15 23 42)',
+                borderRadius: 8,
+                border: '1px solid rgb(203 213 225)',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              }}
+              labelStyle={{ color: 'rgb(15 23 42)' }}
+              itemStyle={{ color: 'rgb(15 23 42)' }}
+              cursor={{ fill: 'rgb(241 245 249)', fillOpacity: 0.5 }}
+            />
+            <Legend />
+            <Bar
+              dataKey="income"
+              name="Income"
+              fill="#22c55e"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={48}
+              activeBar={{ fill: '#4ade80', radius: [4, 4, 0, 0] }}
+            />
+            <Bar
+              dataKey="expenses"
+              name="Expenses"
+              fill="#ef4444"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={48}
+              activeBar={{ fill: '#f87171', radius: [4, 4, 0, 0] }}
+            />
           </BarChart>
         </ResponsiveContainer>
       )}

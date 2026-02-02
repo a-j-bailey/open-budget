@@ -128,95 +128,141 @@ export default function Settings() {
       )}
 
       {activeTab === 'rules' && (
-        <section>
+        <section className="space-y-6">
           {error && (
-            <p className="mb-4 text-red-600 dark:text-red-400 text-sm">{error}</p>
+            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3">
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            </div>
           )}
-          <h2 className="text-lg font-medium mb-2">Categorization rules</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Rules match transaction description or bank category and set budget category or ignore.
-          </p>
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+              Categorization rules
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Rules match transaction description or bank category and set budget category or ignore.
+            </p>
+          </div>
 
-          <form onSubmit={handleAddRule} className="flex flex-wrap items-end gap-3 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Pattern
-              </label>
-              <input
-                type="text"
-                value={pattern}
-                onChange={(e) => setPattern(e.target.value)}
-                placeholder="e.g. Audible or /^AMZN/"
-                className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm w-48"
-              />
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Add rule</h3>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Match
-              </label>
-              <select
-                value={source}
-                onChange={(e) => setSource(e.target.value as 'description' | 'category')}
-                className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              >
-                <option value="description">Description</option>
-                <option value="category">Bank category</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Then
-              </label>
-              <select
-                value={targetCategoryId}
-                onChange={(e) => setTargetCategoryId(e.target.value)}
-                className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm min-w-[140px]"
-              >
-                <option value="ignore">Ignore</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={!isRuleValid}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium inline-flex items-center gap-2"
-            >
-              <Plus className="size-4 shrink-0" />
-              Add rule
-            </button>
-          </form>
-
-          {rules.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No rules yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {rules.map((rule) => (
-                <li
-                  key={rule.id}
-                  className="flex items-center gap-4 py-2 border-b border-gray-200 dark:border-gray-700 last:border-0"
+            <form onSubmit={handleAddRule} className="p-4 flex flex-wrap items-end gap-4">
+              <div className="min-w-0">
+                <label htmlFor="rule-pattern" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Pattern
+                </label>
+                <input
+                  id="rule-pattern"
+                  type="text"
+                  value={pattern}
+                  onChange={(e) => setPattern(e.target.value)}
+                  placeholder="e.g. Audible or /^AMZN/"
+                  className="w-full min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="rule-match" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Match
+                </label>
+                <select
+                  id="rule-match"
+                  value={source}
+                  onChange={(e) => setSource(e.target.value as 'description' | 'category')}
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <span className="font-mono text-sm">{rule.pattern}</span>
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">{rule.source}</span>
-                  <span className="text-sm">
-                    → {rule.targetCategoryId === 'ignore' ? 'Ignore' : categories.find((c) => c.id === rule.targetCategoryId)?.name ?? rule.targetCategoryId}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeRule(rule.id)}
-                    title="Remove rule"
-                    aria-label="Remove rule"
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded ml-auto transition-colors"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+                  <option value="description">Description</option>
+                  <option value="category">Bank category</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="rule-then" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Then
+                </label>
+                <select
+                  id="rule-then"
+                  value={targetCategoryId}
+                  onChange={(e) => setTargetCategoryId(e.target.value)}
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="ignore">Ignore</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={!isRuleValid}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium inline-flex items-center gap-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 transition-colors"
+              >
+                <Plus className="size-4 shrink-0" />
+                Add rule
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Active rules {rules.length > 0 && <span className="text-gray-500 dark:text-gray-400 font-normal">({rules.length})</span>}
+              </h3>
+            </div>
+            {rules.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">No rules yet.</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Add a rule above to categorize transactions automatically.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-2.5 px-4 font-medium">Pattern</th>
+                      <th className="py-2.5 px-4 font-medium">Match</th>
+                      <th className="py-2.5 px-4 font-medium">Result</th>
+                      <th className="py-2.5 px-4 w-12 text-right font-medium" aria-label="Actions" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rules.map((rule) => (
+                      <tr
+                        key={rule.id}
+                        className="group border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <td className="py-2.5 px-4 font-mono text-gray-900 dark:text-gray-100">
+                          {rule.pattern}
+                        </td>
+                        <td className="py-2.5 px-4 text-gray-500 dark:text-gray-400 capitalize">
+                          {rule.source}
+                        </td>
+                        <td className="py-2.5 px-4 text-gray-700 dark:text-gray-300">
+                          {rule.targetCategoryId === 'ignore' ? (
+                            <span className="text-gray-500 dark:text-gray-400 italic">Ignore</span>
+                          ) : (
+                            categories.find((c) => c.id === rule.targetCategoryId)?.name ?? rule.targetCategoryId
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => removeRule(rule.id)}
+                            title="Remove rule"
+                            aria-label="Remove rule"
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
       )}
     </div>
