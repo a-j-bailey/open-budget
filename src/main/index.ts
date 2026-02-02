@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
+import { existsSync } from 'fs'
 import path from 'path'
 import fs from 'fs/promises'
 
@@ -49,11 +50,25 @@ async function writeFileSafe(filePath: string, content: string): Promise<void> {
   await fs.writeFile(filePath, content, 'utf-8')
 }
 
+function getResourcesDir(): string {
+  const builtPath = path.join(__dirname, 'resources')
+  if (existsSync(builtPath)) return builtPath
+  return path.join(app.getAppPath(), 'resources')
+}
+
 function createWindow(): void {
   const preloadPath = path.resolve(__dirname, '../preload/index.mjs')
+  const resourcesDir = getResourcesDir()
+  // Use directory path so nativeImage can load icon.png + icon@2x.png for Retina (per Electron/Forge docs)
+  const icon = nativeImage.createFromPath(path.join(resourcesDir, 'icon.png'))
+  const iconImage = !icon.isEmpty() ? icon : undefined
+  if (iconImage && process.platform === 'darwin') {
+    app.dock.setIcon(iconImage)
+  }
   const win = new BrowserWindow({
     width: 1000,
     height: 700,
+    icon: iconImage,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

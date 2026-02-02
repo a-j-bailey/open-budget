@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  main: {},
+  main: {
+    build: {
+      copyPublicDir: true,
+    },
+  },
   preload: {},
   renderer: {
     root: 'src/renderer',

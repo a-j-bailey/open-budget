@@ -185,7 +185,6 @@ export default function Budget() {
                   aria-label="Remove category"
                 >
                   <Trash2 className="size-4 shrink-0" />
-                  Remove
                 </button>
               </li>
             ))}

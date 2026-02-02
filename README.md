@@ -50,6 +50,13 @@ npm run preview
 
 Serves the built renderer in the browser for quick UI checks without launching Electron.
 
+## App icon
+
+1. Add a PNG (e.g. 256×256 or 512×512) as **`resources/icon.png`**.
+2. The icon is used for the window and dock/taskbar when you run the app.
+
+If `icon.png` is missing, Electron uses its default icon. For packaged installers (macOS `.app`, Windows `.exe`), see **`resources/README.md`** and [electron-builder](https://www.electron.build/) icon config.
+
 ## Data directory
 
 - **Location:** `userData/household-budget`  
