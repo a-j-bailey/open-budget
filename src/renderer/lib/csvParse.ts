@@ -67,7 +67,7 @@ export function parseCSVToExpenses(csvContent: string): ExpenseRow[] {
     header: true,
     skipEmptyLines: true,
   })
-  if (parsed.errors.length) {
+  if (parsed.errors.length && import.meta.env.DEV) {
     console.warn('CSV parse errors:', parsed.errors)
   }
   const rows: ExpenseRow[] = []
