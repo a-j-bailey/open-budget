@@ -71,7 +71,7 @@ export function SpendingByCategoryPieChart({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
       <h3 className="text-lg font-medium mb-4">
         {title}
         {monthKey && (
@@ -147,7 +147,7 @@ export default function ChartPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
       <h3 className="text-lg font-medium mb-4">
         {title}
         {monthKey && (
@@ -184,7 +184,7 @@ export function TotalByMonthChart({ data, title }: TotalByMonthChartProps) {
     expenses: d.expenses,
   }))
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
       <h3 className="text-lg font-medium mb-4">{title}</h3>
       {chartData.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm">No data.</p>
