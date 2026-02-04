@@ -62,23 +62,42 @@ export default function Dashboard() {
     limit: number
     over: boolean
     isIncome: boolean
-  }) => (
-    <tr className="odd:bg-gray-50 dark:odd:bg-gray-800/50 even:bg-white dark:even:bg-gray-900">
-      <td className="py-1.5 px-2 font-semibold text-gray-900 dark:text-gray-100">{name}</td>
-      <td className="py-1.5 px-2 text-right">
-        {isIncome ? (
-          <span className="text-green-600 dark:text-green-400 font-medium">+${spent.toFixed(2)}</span>
-        ) : (
-          <span className={over ? 'text-red-600 dark:text-red-400 font-medium' : ''}>
-            ${spent.toFixed(2)}
+  }) => {
+    const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0
+    const barColor = over ? 'bg-red-500 dark:bg-red-500' : 'bg-green-500 dark:bg-green-500'
+    return (
+      <tr className="odd:bg-gray-50 dark:odd:bg-gray-800/50 even:bg-white dark:even:bg-gray-900">
+        <td className="py-1.5 px-2 text-xs font-medium text-gray-900 dark:text-gray-100 align-top pt-2">
+          {name}
+        </td>
+        <td className="py-1.5 px-2 min-w-[80px] max-w-[140px]">
+          <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-[width] duration-300 ${barColor}`}
+              style={{ width: `${pct}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(pct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${name}: $${spent.toFixed(2)} of $${limit.toFixed(2)}`}
+            />
+          </div>
+        </td>
+        <td className="py-1.5 px-2 text-xs text-right align-top pt-2 whitespace-nowrap">
+          {isIncome ? (
+            <span className="text-green-600 dark:text-green-400 font-medium">+${spent.toFixed(2)}</span>
+          ) : (
+            <span className={over ? 'text-red-600 dark:text-red-400 font-medium' : ''}>
+              ${spent.toFixed(2)}
+            </span>
+          )}
+          <span className="text-gray-500 dark:text-gray-400 opacity-70 ml-0.5 text-xs">
+            / ${limit.toFixed(2)}
           </span>
-        )}
-        <span className="text-gray-500 dark:text-gray-400 opacity-70 ml-0.5">
-          / ${limit.toFixed(2)}
-        </span>
-      </td>
-    </tr>
-  )
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <div>
@@ -163,7 +182,7 @@ export default function Dashboard() {
               {categoryTab === 'income' ? (
                 incomeCategories.length > 0 ? (
                   <div className="overflow-x-auto rounded border border-gray-200 dark:border-gray-700">
-                    <table className="w-full text-sm">
+                    <table className="w-full">
                       <tbody>
                         {incomeCategories.map(({ id, name, spent, limit, over }) => (
                           <CategoryRow
@@ -189,7 +208,7 @@ export default function Dashboard() {
                 )
               ) : expenseCategories.length > 0 ? (
                 <div className="overflow-x-auto rounded border border-gray-200 dark:border-gray-700">
-                  <table className="w-full text-sm">
+                  <table className="w-full">
                     <tbody>
                       {expenseCategories.map(({ id, name, spent, limit, over }) => (
                         <CategoryRow
