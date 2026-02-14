@@ -77,8 +77,10 @@ function createWindow(): void {
     },
   })
 
-  if (process.env.NODE_ENV !== 'production') {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173')
+  // Only use dev server when electron-vite set ELECTRON_RENDERER_URL (e.g. npm run dev)
+  const devUrl = process.env.ELECTRON_RENDERER_URL
+  if (!app.isPackaged && devUrl) {
+    win.loadURL(devUrl)
     win.webContents.openDevTools()
   } else {
     win.loadFile(path.join(__dirname, '../renderer/index.html'))

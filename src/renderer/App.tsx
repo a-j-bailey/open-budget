@@ -1,17 +1,14 @@
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Wallet, Receipt, Settings as SettingsIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
+import { LayoutDashboard, Receipt, Settings as SettingsIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ThemeProvider } from './ThemeContext'
 import { MonthProvider, useMonth, formatMonthLabel, prevMonthKey, nextMonthKey, currentMonthKey } from './MonthContext'
 import Dashboard from './pages/Dashboard'
-import Budget from './pages/Budget'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
 
 const navItems = [
   { to: '/', label: 'Dashboard', Icon: LayoutDashboard },
-  { to: '/budget', label: 'Budget', Icon: Wallet },
   { to: '/expenses', label: 'Transactions', Icon: Receipt },
-  { to: '/settings', label: 'Settings', Icon: SettingsIcon },
 ] as const
 
 function MonthSelector() {
@@ -66,7 +63,18 @@ function Header() {
           </Link>
         ))}
       </nav>
-      {showMonthSelector && <MonthSelector />}
+      <div className="flex items-center gap-2">
+        {showMonthSelector && <MonthSelector />}
+        <Link
+          to="/settings"
+          className={`flex items-center justify-center p-2 rounded-md text-sm font-medium ${
+            loc.pathname === '/settings' ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`}
+          aria-label="Settings"
+        >
+          <SettingsIcon className="size-5 shrink-0" />
+        </Link>
+      </div>
     </header>
   )
 }
@@ -80,9 +88,9 @@ export default function App() {
           <main className="p-4">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/budget" element={<Budget />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         </div>

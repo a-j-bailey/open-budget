@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
@@ -48,9 +48,9 @@ function Root() {
     return <div style={{ padding: 24, fontFamily: 'system-ui' }}>Loading…</div>
   }
   return (
-    <BrowserRouter>
+    <HashRouter>
       <App />
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

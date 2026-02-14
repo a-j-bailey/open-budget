@@ -1,15 +1,34 @@
-import { useState } from 'react'
-import { Trash2, Sun, Moon, Monitor, FolderOpen, Plus, Sliders, ListChecks } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Trash2, Sun, Moon, Monitor, FolderOpen, Plus, Sliders, ListChecks, Wallet } from 'lucide-react'
 import { useThemeContext } from '../ThemeContext'
 import type { Theme } from '../hooks/useTheme'
 import { useRules } from '../hooks/useRules'
 import { useBudget } from '../hooks/useBudget'
 import * as electron from '../lib/electron'
+import Budget from './Budget'
 
-type TabId = 'settings' | 'rules'
+type TabId = 'settings' | 'rules' | 'budget'
+
+const TAB_IDS: TabId[] = ['settings', 'rules', 'budget']
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState<TabId>('settings')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab') as TabId | null
+  const [activeTab, setActiveTab] = useState<TabId>(
+    tabFromUrl && TAB_IDS.includes(tabFromUrl) ? tabFromUrl : 'settings'
+  )
+
+  useEffect(() => {
+    if (tabFromUrl && TAB_IDS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl)
+    }
+  }, [tabFromUrl])
+
+  const setTab = (id: TabId) => {
+    setActiveTab(id)
+    setSearchParams(id === 'settings' ? {} : { tab: id })
+  }
   const { theme, setTheme } = useThemeContext()
   const { rules, loading, error, addRule, removeRule } = useRules()
   const { categories } = useBudget()
@@ -46,6 +65,7 @@ export default function Settings() {
   const tabs: { id: TabId; label: string; Icon: typeof Sliders }[] = [
     { id: 'settings', label: 'Settings', Icon: Sliders },
     { id: 'rules', label: 'Rules', Icon: ListChecks },
+    { id: 'budget', label: 'Budget', Icon: Wallet },
   ]
 
   if (loading) {
@@ -66,7 +86,7 @@ export default function Settings() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setTab(tab.id)}
             className={`px-4 py-2.5 text-sm font-medium inline-flex items-center gap-2 rounded-t -mb-px transition-colors ${
               activeTab === tab.id
                 ? 'bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400 border border-b-0 border-gray-200 dark:border-gray-700 border-b-transparent'
@@ -126,6 +146,8 @@ export default function Settings() {
           </section>
         </>
       )}
+
+      {activeTab === 'budget' && <Budget embedded />}
 
       {activeTab === 'rules' && (
         <section className="space-y-6">

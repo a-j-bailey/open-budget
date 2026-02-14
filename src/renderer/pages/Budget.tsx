@@ -3,7 +3,12 @@ import { CreditCard, Wallet, Plus, Trash2 } from 'lucide-react'
 import { useBudget } from '../hooks/useBudget'
 import type { BudgetCategoryType } from '../types'
 
-export default function Budget() {
+interface BudgetProps {
+  /** When true, render as a section (e.g. inside Settings) with h2 instead of h1 */
+  embedded?: boolean
+}
+
+export default function Budget({ embedded }: BudgetProps) {
   const {
     categories,
     loading,
@@ -45,10 +50,13 @@ export default function Budget() {
     !Number.isNaN(parseFloat(newLimit)) &&
     parseFloat(newLimit) >= 0
 
+  const HeadingTag = embedded ? 'h2' : 'h1'
+  const headingClass = embedded ? 'text-lg font-semibold mb-4' : 'text-xl font-semibold mb-4'
+
   if (loading) {
     return (
       <div>
-        <h1 className="text-xl font-semibold mb-4">Budget</h1>
+        <HeadingTag className={headingClass}>Budget</HeadingTag>
         <p className="text-gray-500 dark:text-gray-400">Loading...</p>
       </div>
     )
@@ -58,7 +66,7 @@ export default function Budget() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Budget</h1>
+      <HeadingTag className={headingClass}>Budget</HeadingTag>
       {error && (
         <p className="mb-4 text-red-600 dark:text-red-400 text-sm">{error}</p>
       )}

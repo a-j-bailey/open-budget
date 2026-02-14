@@ -211,7 +211,7 @@ export default function Dashboard() {
           </div>
           {categories.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              <Link to="/budget" className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link to="/settings?tab=budget" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Add budget categories
               </Link>{' '}
               to see limits.
@@ -241,7 +241,7 @@ export default function Dashboard() {
                 ) : (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
                     No income categories.{' '}
-                    <Link to="/budget" className="text-blue-600 dark:text-blue-400 hover:underline">
+                    <Link to="/settings?tab=budget" className="text-blue-600 dark:text-blue-400 hover:underline">
                       Add on Budget
                     </Link>
                   </p>
@@ -268,7 +268,7 @@ export default function Dashboard() {
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   No expense categories.{' '}
-                  <Link to="/budget" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  <Link to="/settings?tab=budget" className="text-blue-600 dark:text-blue-400 hover:underline">
                     Add on Budget
                   </Link>
                 </p>
@@ -293,7 +293,7 @@ export default function Dashboard() {
           Import or edit transactions
         </Link>
         {' · '}
-        <Link to="/budget" className="text-blue-600 dark:text-blue-400 hover:underline">
+        <Link to="/settings?tab=budget" className="text-blue-600 dark:text-blue-400 hover:underline">
           Edit budget
         </Link>
       </p>

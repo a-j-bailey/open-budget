@@ -77,10 +77,13 @@ export default function Expenses() {
 
 
   const handleReapplyRules = () => {
+    const validCategoryIds = new Set(categories.map((c) => c.id))
     const updated = expenses.map((row) => {
-      if (row.budgetCategoryId != null && row.budgetCategoryId !== '') {
-        return row
-      }
+      const hasValidCategory =
+        row.budgetCategoryId != null &&
+        row.budgetCategoryId !== '' &&
+        validCategoryIds.has(row.budgetCategoryId)
+      if (hasValidCategory) return row
       const { budgetCategoryId, ignored } = applyRules(rules, row.description, row.category)
       return { ...row, budgetCategoryId, ignored }
     })

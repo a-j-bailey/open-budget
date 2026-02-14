@@ -3,11 +3,16 @@
   "name": "household-budget",
   "version": "1.0.0",
   "description": "Household budget desktop app",
+  "author": "Adam Bailey",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build && node scripts/copy-resources.cjs",
-    "preview": "electron-vite preview"
+    "preview": "electron-vite preview",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:win": "npm run build && electron-builder --win",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:all": "npm run build && electron-builder --mac --win --linux"
   },
   "dependencies": {
     "lucide-react": "^0.563.0",
@@ -25,6 +30,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "electron": "^28.2.0",
+    "electron-builder": "^26.7.0",
     "electron-vite": "^2.0.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
