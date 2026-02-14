@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { useBudget } from '../hooks/useBudget'
 import { useAllExpenses } from '../hooks/useExpenses'
 import { useMonthlyTotals, useMonthlyTotalsForMonth } from '../hooks/useMonthlyTotals'
@@ -17,18 +17,35 @@ export default function Dashboard() {
   const aggregates = useMonthlyTotals(expenses)
   const { byCategory, total, income } = useMonthlyTotalsForMonth(expenses, selectedMonth)
 
+  const prevMonthKey = (key: string): string | null => {
+    const [y, m] = key.split('-').map(Number)
+    if (m === 1) return `${y - 1}-12`
+    return `${y}-${String(m - 1).padStart(2, '0')}`
+  }
+  const prevAgg = selectedMonth
+    ? aggregates.find((a) => a.monthKey === prevMonthKey(selectedMonth))
+    : undefined
+  const byCategoryPrev = prevAgg?.byCategory ?? {}
+
   const totalByMonthData = aggregates.map((a) => ({
     monthKey: a.monthKey,
     income: a.income,
     expenses: a.total,
   }))
 
-  const categoryTotals = categories.map((cat) => ({
-    ...cat,
-    spent: byCategory[cat.id] ?? 0,
-    limit: cat.monthlyLimit,
-    over: (byCategory[cat.id] ?? 0) > cat.monthlyLimit,
-  }))
+  const categoryTotals = categories.map((cat) => {
+    const spent = byCategory[cat.id] ?? 0
+    const prevSpent = byCategoryPrev[cat.id] ?? 0
+    const trend =
+      spent > prevSpent ? ('up' as const) : spent < prevSpent ? ('down' as const) : null
+    return {
+      ...cat,
+      spent,
+      limit: cat.monthlyLimit,
+      over: spent > cat.monthlyLimit,
+      trend,
+    }
+  })
 
   const incomeCategories = categoryTotals.filter((c) => c.type === 'income')
   const expenseCategories = categoryTotals.filter((c) => (c.type ?? 'expense') === 'expense')
@@ -55,6 +72,7 @@ export default function Dashboard() {
     limit,
     over,
     isIncome,
+    trend,
   }: {
     id: string
     name: string
@@ -62,13 +80,34 @@ export default function Dashboard() {
     limit: number
     over: boolean
     isIncome: boolean
+    trend: 'up' | 'down' | null
   }) => {
     const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0
     const barColor = over ? 'bg-red-500 dark:bg-red-500' : 'bg-green-500 dark:bg-green-500'
     return (
       <tr className="odd:bg-gray-50 dark:odd:bg-gray-800/50 even:bg-white dark:even:bg-gray-900">
         <td className="py-1.5 px-2 text-xs font-medium text-gray-900 dark:text-gray-100 align-top pt-2">
-          {name}
+          <span className="inline-flex items-center gap-1.5">
+            {trend === 'up' && (
+              <TrendingUp
+                className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+                aria-label="Up from last month"
+              />
+            )}
+            {trend === 'down' && (
+              <TrendingDown
+                className="size-3.5 shrink-0 text-sky-600 dark:text-sky-400"
+                aria-label="Down from last month"
+              />
+            )}
+            {trend === null && (
+              <Minus
+                className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500"
+                aria-label="No change from last month"
+              />
+            )}
+            {name}
+          </span>
         </td>
         <td className="py-1.5 px-2 min-w-[80px] max-w-[140px]">
           <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -184,7 +223,7 @@ export default function Dashboard() {
                   <div className="overflow-x-auto rounded border border-gray-200 dark:border-gray-700">
                     <table className="w-full">
                       <tbody>
-                        {incomeCategories.map(({ id, name, spent, limit, over }) => (
+                        {incomeCategories.map(({ id, name, spent, limit, over, trend }) => (
                           <CategoryRow
                             key={id}
                             id={id}
@@ -193,6 +232,7 @@ export default function Dashboard() {
                             limit={limit}
                             over={over}
                             isIncome
+                            trend={trend}
                           />
                         ))}
                       </tbody>
@@ -210,7 +250,7 @@ export default function Dashboard() {
                 <div className="overflow-x-auto rounded border border-gray-200 dark:border-gray-700">
                   <table className="w-full">
                     <tbody>
-                      {expenseCategories.map(({ id, name, spent, limit, over }) => (
+                      {expenseCategories.map(({ id, name, spent, limit, over, trend }) => (
                         <CategoryRow
                           key={id}
                           id={id}
@@ -219,6 +259,7 @@ export default function Dashboard() {
                           limit={limit}
                           over={over}
                           isIncome={false}
+                          trend={trend}
                         />
                       ))}
                     </tbody>
