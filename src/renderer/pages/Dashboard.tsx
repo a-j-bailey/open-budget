@@ -5,7 +5,7 @@ import { useBudget } from '../hooks/useBudget'
 import { useAllExpenses } from '../hooks/useExpenses'
 import { useMonthlyTotals, useMonthlyTotalsForMonth } from '../hooks/useMonthlyTotals'
 import { useMonth, currentMonthKey } from '../MonthContext'
-import { SpendingByCategoryPieChart, TotalByMonthChart } from '../components/ChartPanel'
+import { SpendingByCategoryPieChart, SpendingByCategoryLineChart, TotalByMonthChart } from '../components/ChartPanel'
 
 type CategoryTab = 'income' | 'expenses'
 
@@ -22,10 +22,30 @@ export default function Dashboard() {
     if (m === 1) return `${y - 1}-12`
     return `${y}-${String(m - 1).padStart(2, '0')}`
   }
-  const prevAgg = selectedMonth
-    ? aggregates.find((a) => a.monthKey === prevMonthKey(selectedMonth))
-    : undefined
-  const byCategoryPrev = prevAgg?.byCategory ?? {}
+  /** Get the N month keys immediately before the given key (e.g. last 3 months). */
+  const prevMonthKeys = (key: string, count: number): string[] => {
+    const keys: string[] = []
+    let k: string | null = key
+    for (let i = 0; i < count && k; i++) {
+      k = prevMonthKey(k)
+      if (k) keys.push(k)
+    }
+    return keys
+  }
+  const last3MonthKeys = selectedMonth ? prevMonthKeys(selectedMonth, 3) : []
+  const last3Aggregates = last3MonthKeys
+    .map((monthKey) => aggregates.find((a) => a.monthKey === monthKey))
+    .filter((a): a is NonNullable<typeof a> => a != null)
+  const byCategoryAvgLast3: Record<string, number> = {}
+  if (last3Aggregates.length > 0) {
+    for (const cat of categories) {
+      let sum = 0
+      for (const agg of last3Aggregates) {
+        sum += agg.byCategory[cat.id] ?? 0
+      }
+      byCategoryAvgLast3[cat.id] = sum / last3Aggregates.length
+    }
+  }
 
   const totalByMonthData = aggregates.map((a) => ({
     monthKey: a.monthKey,
@@ -35,9 +55,15 @@ export default function Dashboard() {
 
   const categoryTotals = categories.map((cat) => {
     const spent = byCategory[cat.id] ?? 0
-    const prevSpent = byCategoryPrev[cat.id] ?? 0
+    const avgLast3 = byCategoryAvgLast3[cat.id] ?? 0
     const trend =
-      spent > prevSpent ? ('up' as const) : spent < prevSpent ? ('down' as const) : null
+      last3Aggregates.length === 0
+        ? null
+        : spent > avgLast3
+          ? ('up' as const)
+          : spent < avgLast3
+            ? ('down' as const)
+            : null
     return {
       ...cat,
       spent,
@@ -84,26 +110,32 @@ export default function Dashboard() {
   }) => {
     const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0
     const barColor = over ? 'bg-red-500 dark:bg-red-500' : 'bg-green-500 dark:bg-green-500'
+    const rowTint =
+      isIncome
+        ? 'odd:bg-gray-50 dark:odd:bg-gray-800/50 even:bg-white dark:even:bg-gray-900'
+        : over
+          ? 'bg-red-50 dark:bg-red-950/40'
+          : 'bg-emerald-50 dark:bg-emerald-950/40'
     return (
-      <tr className="odd:bg-gray-50 dark:odd:bg-gray-800/50 even:bg-white dark:even:bg-gray-900">
+      <tr className={rowTint}>
         <td className="py-1.5 px-2 text-xs font-medium text-gray-900 dark:text-gray-100 align-top pt-2">
           <span className="inline-flex items-center gap-1.5">
             {trend === 'up' && (
               <TrendingUp
                 className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
-                aria-label="Up from last month"
+                aria-label="Up vs 3-month average"
               />
             )}
             {trend === 'down' && (
               <TrendingDown
                 className="size-3.5 shrink-0 text-sky-600 dark:text-sky-400"
-                aria-label="Down from last month"
+                aria-label="Down vs 3-month average"
               />
             )}
             {trend === null && (
               <Minus
                 className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500"
-                aria-label="No change from last month"
+                aria-label="Same as 3-month average"
               />
             )}
             {name}
@@ -286,6 +318,16 @@ export default function Dashboard() {
           monthKey={selectedMonth}
         />
         <TotalByMonthChart data={totalByMonthData} title="Total by month" />
+      </div>
+
+      <div className="grid gap-4 mb-6 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <SpendingByCategoryLineChart
+            aggregates={aggregates}
+            categories={categories}
+            title="Spending by category per month"
+          />
+        </div>
       </div>
 
       <p className="text-sm text-gray-500 dark:text-gray-400">
