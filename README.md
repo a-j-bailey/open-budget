@@ -1,94 +1,98 @@
 # Household Budget
 
-Electron desktop app for managing a household budget: define categories and monthly limits, import expense CSVs, categorize or ignore transactions, and view monthly charts. All data is stored locally as JSON and CSV (no database, no cloud).
+React Native (Expo) app for managing a household budget across iPhone, iPad, and macOS (Designed for iPad / Mac Catalyst). Define categories and monthly limits, import expense CSVs, categorize transactions with rules, and view responsive interactive charts.
 
 ## Tech stack
 
-- **Electron** + **electron-vite** — main, preload, and renderer build
-- **React 18** + **React Router** — UI and navigation
-- **Tailwind CSS** — styling
-- **Recharts** — dashboard charts
-- **PapaParse** — CSV import/export
-- **Lucide React** — icons
-- **TypeScript** — across main, preload, and renderer
+- **Expo SDK 55 (beta) + React Native 0.83 + Expo Router** — app runtime and navigation
+- **NativeWind (Tailwind)** — styling
+- **react-native-gifted-charts** — interactive pie/bar/line charts
+- **expo-sqlite** — local data storage
+- **react-native-cloud-store (CloudKit)** — iCloud sync
+- **expo-document-picker + expo-file-system** — CSV import and migration
+- **PapaParse** — CSV parsing
+- **Lucide React Native** — icons
+- **TypeScript** — static typing
 
 ## Features
 
-- **Budget** — Add budget categories and monthly limits. Stored in `config.json` in the app data folder.
-- **Expenses** — Import CSV (bank-export style: Transaction Date, Posted Date, Card No., Description, Category, Debit, Credit). Categorize or ignore rows. Data is stored **per month** as `expenses/YYYY-MM.csv`. An existing single `expenses.csv` is migrated into month files on first run.
-- **Settings** — Define rules (match description or bank category → budget category or ignore). Open data folder to inspect `config.json`, `rules.json`, and expense files.
-- **Dashboard** — This month total, spending by category vs limits, and charts (by category and by month).
+- **Budget** — add/edit/remove debit and credit categories with monthly limits or expected amounts.
+- **Expenses** — import CSV, add manual transactions, categorize, ignore, and delete.
+- **Rules** — auto-categorization by description or bank category (supports simple pattern and regex-like syntax).
+- **Dashboard** — monthly totals + interactive charts for category spending and trends.
+- **Sync** — local SQLite first, optional iCloud push/pull.
+- **Migration** — one-time import from old `config.json`, `rules.json`, and monthly `*.csv` files.
 
 ## Scripts
 
-| Script       | Command             | Description                                           |
-| ------------ | ------------------- | ----------------------------------------------------- |
-| **dev**      | `npm run dev`       | Start Electron with Vite dev server (hot reload)      |
-| **build**    | `npm run build`     | Build main, preload, and renderer to `out/`           |
-| **preview**  | `npm run preview`   | Preview the Vite renderer build (web only)            |
-| **build:mac**| `npm run build:mac` | Build then package for macOS (DMG in `release/<version>/`) |
-| **build:win**| `npm run build:win` | Build then package for Windows (NSIS installer)       |
-| **build:linux**| `npm run build:linux` | Build then package for Linux (AppImage)            |
-| **build:all**| `npm run build:all` | Build then package for macOS, Windows, and Linux      |
+| Script | Command | Description |
+| --- | --- | --- |
+| `start` | `npm start` | Start Expo dev server |
+| `ios` | `npm run ios` | Run native iOS build in simulator |
+| `ios:device` | `npm run ios:device` | Run native iOS build on connected device |
+| `build:dev` | `npm run build:dev` | EAS development build (internal simulator profile) |
+| `build:preview` | `npm run build:preview` | EAS preview/internal build |
+| `build:prod` | `npm run build:prod` | EAS production build for App Store |
+| `lint` | `npm run lint` | Expo lint checks |
 
-### Development
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- Xcode + iOS Simulator
+- Apple Developer account (required for iCloud-capable production builds)
+- Expo account (for EAS Build)
+
+### Run locally
 
 ```bash
 npm install
-npm run dev
+npm start
 ```
 
-### Production build
+Then press `i` in the Expo terminal, or run:
 
 ```bash
-npm run build
+npm run ios
 ```
 
-Run the built app from the project root with Electron (e.g. `npx electron .`).
-
-### Installable packages (electron-builder)
-
-To produce installers and packaged apps (e.g. macOS `.dmg`, Windows `.exe`, Linux `.AppImage`):
+## Production builds (EAS)
 
 ```bash
-npm run build:mac     # release/<version>/*.dmg
-npm run build:win     # release/<version>/*-setup.exe
-npm run build:linux   # release/<version>/*.AppImage
-npm run build:all     # all platforms
+npm run build:preview
+npm run build:prod
 ```
 
-Output goes to **`release/<version>/`** (gitignored). Config: `electron-builder.yml`.
+Use `eas submit` for App Store submission after production builds.
 
-### Preview (renderer only)
+## iPad + macOS (Catalyst / Designed for iPad)
 
-```bash
-npm run preview
-```
+- `app.json` has iPad support enabled (`supportsTablet: true`, orientation config).
+- In Xcode/Apple Developer settings, enable "Mac (Designed for iPad)" to allow running the iPad build on macOS.
 
-Serves the built renderer in the browser for quick UI checks without launching Electron.
+## iCloud sync setup
+
+- Ensure iCloud entitlements in `app.json` match your Apple container:
+  - `iCloud.com.magicmirrorcreative.householdbudget`
+- Enable iCloud + Cloud Documents for the app ID in Apple Developer portal.
+- Use **Settings -> iCloud Sync** in app to push/pull snapshots.
+
+## Data migration (from Electron version)
+
+1. Open the `Migrate` screen (`/migrate` route).
+2. Select one or more files from your old data export:
+   - `config.json`
+   - `rules.json`
+   - monthly expense CSV files
+3. Run migration. Data is imported into SQLite and marked complete.
+
+## Data storage
+
+- **Primary storage**: local SQLite database (`household-budget.db`) via `expo-sqlite`.
+- **Sync model**: local-first with optional iCloud snapshot push/pull.
 
 ## App icon
 
-1. Add a PNG (e.g. 256×256 or 512×512) as **`resources/icon.png`**.
-2. The icon is used for the window and dock/taskbar when you run the app.
-
-If `icon.png` is missing, Electron uses its default icon. For packaged installers, optional OS/installer icons go in **`build/`** — see **`build/README.md`** and [electron-builder](https://www.electron.build/) configuration.
-
-## Environment variables
-
-No env vars are required for a normal build or for unsigned installers. For **code signing and notarization** (e.g. macOS notarization, Windows Authenticode), you can set:
-
-| Variable | Purpose |
-| -------- | ------- |
-| `CSC_LINK` | Path or URL to signing certificate (e.g. `.p12`) |
-| `CSC_KEY_PASSWORD` | Certificate password |
-| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | macOS notarization (with an `afterSign` script) |
-| `GH_TOKEN` | Optional: for electron-builder `publish` (e.g. GitHub releases) |
-
-See **`.env.example`** for a list of variable names (no secrets). Set these in CI or a local `.env` that is not committed.
-
-## Data directory
-
-- **Location:** `userData/household-budget`  
-  e.g. on macOS: `~/Library/Application Support/household-budget`
-- **Contents:** `config.json`, `rules.json`, and `expenses/YYYY-MM.csv`. Use **Settings → Open data folder** in the app to open this directory.
+- Source icon: `resources/icon.png`
+- Expo uses this for iOS app icon generation during build.

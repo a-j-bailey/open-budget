@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Household Budget",
+    "slug": "household-budget",
+    "version": "2.0.0",
+    "orientation": "default",
+    "icon": "./resources/icon.png",
+    "scheme": "household-budget",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.magicmirrorcreative.householdbudget",
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "icon": "./resources/icon.png",
+      "infoPlist": {
+        "UIRequiresFullScreen": false,
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      },
+      "entitlements": {
+        "com.apple.developer.icloud-container-identifiers": [
+          "iCloud.com.magicmirrorcreative.householdbudget"
+        ],
+        "com.apple.developer.icloud-services": [
+          "CloudDocuments"
+        ],
+        "com.apple.developer.ubiquity-container-identifiers": [
+          "iCloud.com.magicmirrorcreative.householdbudget"
+        ]
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-document-picker",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "android": {
+      "package": "com.magicmirrorcreative.householdbudget"
+    }
+  }
+}
