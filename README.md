@@ -115,6 +115,8 @@ If iCloud doesn’t work after a build, open the project in Xcode (`ios/` after 
 
 Sync is manual and snapshot-based: there is no automatic merging. The app also tries to pull once on launch (`syncFromCloudIfAvailable` in the root layout) so a fresh install can load the latest snapshot if one exists.
 
+**If you see “You don’t have permission to save the file … in the folder ‘System’”:** the app was trying to write to iCloud without a valid container. Follow the steps above (Apple Developer Portal → enable iCloud + container, then rebuild). After the fix, the app uses the proper iCloud path and skips sync when iCloud isn’t available instead of throwing.
+
 ## Data migration (from Electron version)
 
 1. Open the `Migrate` screen (`/migrate` route).

@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import type { Theme } from '../../hooks/useTheme'
 import { useRules } from '../../hooks/useRules'
 import { useBudget } from '../../hooks/useBudget'
-import { pushCloudSnapshot, syncFromCloudIfAvailable } from '../../lib/cloudSync'
+import {
+  getLastSyncState,
+  isICloudAvailable,
+  pushCloudSnapshot,
+  syncFromCloudIfAvailable,
+  type LastSyncState,
+} from '../../lib/cloudSync'
 
 type TabId = 'settings' | 'rules' | 'budget'
 
@@ -66,6 +72,89 @@ export default function SettingsScreen() {
   const [newName, setNewName] = useState('')
   const [newLimit, setNewLimit] = useState('')
   const [viewMode, setViewMode] = useState<'debit' | 'credit'>('debit')
+
+  const [pushLoading, setPushLoading] = useState(false)
+  const [pullLoading, setPullLoading] = useState(false)
+  const [lastSync, setLastSync] = useState<LastSyncState>({})
+  const [iCloudAvailable, setICloudAvailable] = useState<boolean | null>(null)
+  const [syncMessage, setSyncMessage] = useState<{ text: string; isError: boolean } | null>(null)
+
+  const loadSyncState = useCallback(async () => {
+    const [state, available] = await Promise.all([getLastSyncState(), isICloudAvailable()])
+    setLastSync(state)
+    setICloudAvailable(available)
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'settings') loadSyncState()
+  }, [activeTab, loadSyncState])
+
+  const showSyncMessage = useCallback((text: string, isError: boolean) => {
+    setSyncMessage({ text, isError })
+    const t = setTimeout(() => setSyncMessage(null), 5000)
+    return () => clearTimeout(t)
+  }, [])
+
+  const handlePush = useCallback(async () => {
+    if (pushLoading) return
+    setPushLoading(true)
+    setSyncMessage(null)
+    try {
+      const result = await pushCloudSnapshot()
+      await loadSyncState()
+      if (result.success) {
+        const { counts } = result
+        showSyncMessage(
+          counts
+            ? `Pushed ${counts.categories} categories, ${counts.rules} rules, ${counts.expenses} expenses`
+            : 'Pushed to iCloud',
+          false
+        )
+      } else {
+        showSyncMessage(result.error ?? 'Push failed', true)
+      }
+    } finally {
+      setPushLoading(false)
+    }
+  }, [pushLoading, loadSyncState, showSyncMessage])
+
+  const handlePull = useCallback(async () => {
+    if (pullLoading) return
+    setPullLoading(true)
+    setSyncMessage(null)
+    try {
+      const result = await syncFromCloudIfAvailable()
+      await loadSyncState()
+      if (result.success) {
+        const { counts } = result
+        showSyncMessage(
+          counts
+            ? `Pulled ${counts.categories} categories, ${counts.rules} rules, ${counts.expenses} expenses`
+            : 'Pulled from iCloud',
+          false
+        )
+      } else {
+        showSyncMessage(result.error ?? 'Pull failed', true)
+      }
+    } finally {
+      setPullLoading(false)
+    }
+  }, [pullLoading, loadSyncState, showSyncMessage])
+
+  const formatSyncTime = (iso: string | undefined) => {
+    if (!iso) return 'Never'
+    try {
+      const d = new Date(iso)
+      const now = new Date()
+      const diffMs = now.getTime() - d.getTime()
+      if (diffMs < 60_000) return 'Just now'
+      if (diffMs < 3600_000) return `${Math.floor(diffMs / 60_000)}m ago`
+      if (diffMs < 86400_000) return `${Math.floor(diffMs / 3600_000)}h ago`
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    } catch {
+      return iso
+    }
+  }
 
   const visibleCategories = useMemo(
     () => categories.filter((c) => (viewMode === 'credit' ? c.type === 'income' : (c.type ?? 'expense') === 'expense')),
@@ -185,29 +274,107 @@ export default function SettingsScreen() {
           </SectionCard>
 
           <SectionCard title="iCloud Sync" isDark={isDark}>
-            <View style={{ gap: 10 }}>
-              <Pressable
-                onPress={() => pushCloudSnapshot()}
-                style={{
-                  backgroundColor: '#0ea5e9',
-                  borderRadius: 10,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Push to iCloud</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => syncFromCloudIfAvailable()}
-                style={{
-                  backgroundColor: '#10b981',
-                  borderRadius: 10,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
-              </Pressable>
+            <View style={{ gap: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor:
+                      iCloudAvailable === null
+                        ? muted
+                        : iCloudAvailable
+                          ? '#22c55e'
+                          : '#ef4444',
+                  }}
+                />
+                <Text style={{ fontSize: 14, color: muted }}>
+                  {iCloudAvailable === null
+                    ? 'Checking iCloud…'
+                    : iCloudAvailable
+                      ? 'iCloud available'
+                      : 'iCloud unavailable (sign in or enable iCloud Drive)'}
+                </Text>
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Text style={{ fontSize: 13, color: muted }}>
+                  Last pushed: {formatSyncTime(lastSync.lastPushAt)}
+                  {lastSync.lastPushCounts &&
+                    ` · ${lastSync.lastPushCounts.categories} categories, ${lastSync.lastPushCounts.rules} rules, ${lastSync.lastPushCounts.expenses} expenses`}
+                </Text>
+                <Text style={{ fontSize: 13, color: muted }}>
+                  Last pulled: {formatSyncTime(lastSync.lastPullAt)}
+                  {lastSync.lastPullCounts &&
+                    ` · ${lastSync.lastPullCounts.categories} categories, ${lastSync.lastPullCounts.rules} rules, ${lastSync.lastPullCounts.expenses} expenses`}
+                </Text>
+              </View>
+
+              {syncMessage && (
+                <View
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 10,
+                    borderRadius: 8,
+                    backgroundColor: syncMessage.isError
+                      ? (isDark ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.12)')
+                      : (isDark ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.12)'),
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: syncMessage.isError
+                        ? (isDark ? '#fca5a5' : '#b91c1c')
+                        : (isDark ? '#86efac' : '#15803d'),
+                    }}
+                  >
+                    {syncMessage.text}
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable
+                  onPress={handlePush}
+                  disabled={pushLoading || pullLoading}
+                  style={{
+                    flex: 1,
+                    backgroundColor: pushLoading ? '#94a3b8' : '#0ea5e9',
+                    borderRadius: 10,
+                    paddingVertical: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 48,
+                  }}
+                >
+                  {pushLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Push to iCloud</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={handlePull}
+                  disabled={pushLoading || pullLoading}
+                  style={{
+                    flex: 1,
+                    backgroundColor: pullLoading ? '#94a3b8' : '#10b981',
+                    borderRadius: 10,
+                    paddingVertical: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 48,
+                  }}
+                >
+                  {pullLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
+                  )}
+                </Pressable>
+              </View>
             </View>
           </SectionCard>
 

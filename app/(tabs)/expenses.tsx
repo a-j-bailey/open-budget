@@ -9,9 +9,10 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'
-import { Receipt } from 'lucide-react-native'
+import { Check, Receipt } from 'lucide-react-native'
 import type { ExpenseRow } from '../../types'
 import { useMonth } from '../../contexts/MonthContext'
 import { useExpenses } from '../../hooks/useExpenses'
@@ -19,9 +20,17 @@ import { useBudget } from '../../hooks/useBudget'
 import { useRules, applyRules } from '../../hooks/useRules'
 import { useThemeContext } from '../../contexts/ThemeContext'
 
+const GROUP_RADIUS = 12
+const ROW_MIN_HEIGHT = 44
+const INSET_H = 20
+const SECTION_GAP = 20
+
 const today = () => new Date().toISOString().slice(0, 10)
+const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
+const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
 
 export default function ExpensesScreen() {
+  const insets = useSafeAreaInsets()
   const { selectedMonth } = useMonth()
   const { isDark } = useThemeContext()
   const {
@@ -421,7 +430,6 @@ export default function ExpensesScreen() {
                     justifyContent: 'space-between',
                     paddingVertical: 12,
                     paddingHorizontal: 4,
-                    backgroundColor: bg,
                   }}
                 >
                   <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
@@ -450,146 +458,266 @@ export default function ExpensesScreen() {
       )}
     </ScrollView>
 
-      {/* Edit expense sheet */}
+      {/* Edit transaction sheet — iOS inset grouped style */}
       <Modal
         visible={editingIndex !== null}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setEditingIndex(null)}
       >
-        <View style={{ flex: 1, backgroundColor: bg }}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#0c0a09' : '#f2f2f7' }}>
+          {/* Sheet grabber + nav — compact top, respect safe area */}
+          <View
+            style={{
+              paddingTop: insets.top > 0 ? insets.top : 12,
+              paddingBottom: 6,
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={{
+                width: 36,
+                height: 5,
+                borderRadius: 2.5,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)',
+              }}
+            />
+          </View>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
               paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: border,
+              paddingBottom: 12,
             }}
           >
-            <Pressable onPress={() => setEditingIndex(null)} hitSlop={12}>
-              <Text style={{ fontSize: 17, color: '#0ea5e9' }}>Cancel</Text>
+            <Pressable
+              onPress={() => setEditingIndex(null)}
+              hitSlop={12}
+              style={{ minWidth: 70, alignItems: 'flex-start' }}
+            >
+              <Text style={{ fontSize: 17, color: '#0a84ff' }}>Cancel</Text>
             </Pressable>
             <Text style={{ fontSize: 17, fontWeight: '600', color: label }}>Edit transaction</Text>
-            <Pressable onPress={handleSaveEdit} hitSlop={12}>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: '#10b981' }}>Save</Text>
+            <Pressable
+              onPress={handleSaveEdit}
+              hitSlop={12}
+              style={{ minWidth: 70, alignItems: 'flex-end' }}
+            >
+              <Text style={{ fontSize: 17, fontWeight: '600', color: '#34c759' }}>Save</Text>
             </Pressable>
           </View>
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={{
+              paddingHorizontal: INSET_H,
+              paddingBottom: Math.max(insets.bottom, 24) + 24,
+              gap: SECTION_GAP,
+            }}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <TextInput
-              value={editForm.transactionDate}
-              onChangeText={(v) => setEditForm((f) => ({ ...f, transactionDate: v }))}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={muted}
+            {/* Transaction details group */}
+            <View
               style={{
-                backgroundColor: inputBg,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                fontSize: 15,
-                color: label,
-                marginBottom: 8,
-              }}
-            />
-            <TextInput
-              value={editForm.description}
-              onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
-              placeholder="Description"
-              placeholderTextColor={muted}
-              style={{
-                backgroundColor: inputBg,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                fontSize: 15,
-                color: label,
-                marginBottom: 8,
-              }}
-            />
-            <TextInput
-              value={editForm.amount}
-              onChangeText={(v) => setEditForm((f) => ({ ...f, amount: v }))}
-              keyboardType="decimal-pad"
-              placeholder="Amount"
-              placeholderTextColor={muted}
-              style={{
-                backgroundColor: inputBg,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                fontSize: 15,
-                color: label,
-                marginBottom: 8,
-              }}
-            />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 15, color: muted }}>Income</Text>
-              <Switch
-                value={editForm.isIncome}
-                onValueChange={(v) => setEditForm((f) => ({ ...f, isIncome: v }))}
-              />
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Text style={{ fontSize: 15, color: muted }}>Ignore</Text>
-              <Switch
-                value={editForm.ignored}
-                onValueChange={(v) => setEditForm((f) => ({ ...f, ignored: v }))}
-              />
-            </View>
-            <Text style={{ fontSize: 15, color: muted, marginBottom: 8 }}>Category</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
-              {categories.map((cat) => (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 10,
-                    backgroundColor: editForm.budgetCategoryId === cat.id ? '#0ea5e9' : segmentBg,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '500',
-                      color: editForm.budgetCategoryId === cat.id ? '#fff' : label,
-                    }}
-                  >
-                    {cat.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable
-              onPress={() =>
-                Alert.alert('Delete transaction', 'Delete this transaction?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: handleDeleteFromEdit },
-                ])
-              }
-              style={{
-                paddingVertical: 12,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(239,68,68,0.5)',
-                borderRadius: 10,
+                backgroundColor: bg,
+                borderRadius: GROUP_RADIUS,
+                overflow: 'hidden',
+                borderCurve: 'continuous',
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#ef4444' }}>Delete transaction</Text>
-            </Pressable>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: border,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label, width: 100 }}>Date</Text>
+                <TextInput
+                  value={editForm.transactionDate}
+                  onChangeText={(v) => setEditForm((f) => ({ ...f, transactionDate: v }))}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={muted}
+                  style={{
+                    flex: 1,
+                    fontSize: 17,
+                    color: label,
+                    paddingVertical: 10,
+                    paddingLeft: 8,
+                  }}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: border,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label, width: 100 }}>Description</Text>
+                <TextInput
+                  value={editForm.description}
+                  onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+                  placeholder="Payee or memo"
+                  placeholderTextColor={muted}
+                  style={{
+                    flex: 1,
+                    fontSize: 17,
+                    color: label,
+                    paddingVertical: 10,
+                    paddingLeft: 8,
+                  }}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label, width: 100 }}>Amount</Text>
+                <TextInput
+                  value={editForm.amount}
+                  onChangeText={(v) => setEditForm((f) => ({ ...f, amount: v }))}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor={muted}
+                  style={{
+                    flex: 1,
+                    fontSize: 17,
+                    color: label,
+                    paddingVertical: 10,
+                    paddingLeft: 8,
+                    fontVariant: ['tabular-nums'],
+                    textAlign: 'right',
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Income & Ignore group */}
+            <View
+              style={{
+                backgroundColor: bg,
+                borderRadius: GROUP_RADIUS,
+                overflow: 'hidden',
+                borderCurve: 'continuous',
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: border,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label }}>Income</Text>
+                <Switch
+                  value={editForm.isIncome}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, isIncome: v }))}
+                  trackColor={{ false: segmentBg, true: 'rgba(52, 199, 89, 0.35)' }}
+                  thumbColor={editForm.isIncome ? '#34c759' : undefined}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label }}>Ignore</Text>
+                <Switch
+                  value={editForm.ignored}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, ignored: v }))}
+                  trackColor={{ false: segmentBg, true: 'rgba(255, 149, 0, 0.35)' }}
+                  thumbColor={editForm.ignored ? '#ff9500' : undefined}
+                />
+              </View>
+            </View>
+
+            {/* Category — single-choice list (iOS style) */}
+            <View
+              style={{
+                backgroundColor: bg,
+                borderRadius: GROUP_RADIUS,
+                overflow: 'hidden',
+                borderCurve: 'continuous',
+              }}
+            >
+              {categories.map((cat, i) => {
+                const selected = editForm.budgetCategoryId === cat.id
+                return (
+                  <Pressable
+                    key={cat.id}
+                    onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      minHeight: ROW_MIN_HEIGHT,
+                      paddingHorizontal: 16,
+                      borderTopWidth: i === 0 ? 0 : 1,
+                      borderTopColor: border,
+                      backgroundColor: pressed ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
+                    })}
+                  >
+                    <Text style={{ fontSize: 17, color: label }}>{cat.name}</Text>
+                    {selected ? (
+                      <Check size={22} color="#0a84ff" strokeWidth={2.5} />
+                    ) : null}
+                  </Pressable>
+                )
+              })}
+            </View>
+
+            {/* Delete group — aligned with other rows */}
+            <View
+              style={{
+                backgroundColor: bg,
+                borderRadius: GROUP_RADIUS,
+                overflow: 'hidden',
+                borderCurve: 'continuous',
+              }}
+            >
+              <Pressable
+                onPress={() =>
+                  Alert.alert('Delete transaction', 'This cannot be undone.', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: handleDeleteFromEdit },
+                  ])
+                }
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Text style={{ fontSize: 17, fontWeight: '400', color: '#ff3b30' }}>
+                  Delete transaction
+                </Text>
+              </Pressable>
+            </View>
           </ScrollView>
         </View>
       </Modal>

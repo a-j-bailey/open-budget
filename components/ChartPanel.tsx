@@ -291,6 +291,10 @@ export function SpendingByCategoryLineChart({
   title: string
 }) {
   const { isDark } = useThemeContext()
+  const [chartWidth, setChartWidth] = useState(0)
+  const { width: windowWidth } = useWindowDimensions()
+  const maxChartWidth = Math.max(0, windowWidth - 52)
+
   const expenseCategories = categories.filter((c) => (c.type ?? 'expense') === 'expense')
 
   const bg = isDark ? '#1c1917' : '#ffffff'
@@ -318,10 +322,6 @@ export function SpendingByCategoryLineChart({
       </View>
     )
   }
-
-  const [chartWidth, setChartWidth] = useState(0)
-  const { width: windowWidth } = useWindowDimensions()
-  const maxChartWidth = Math.max(0, windowWidth - 52)
 
   const dataSet = expenseCategories.map((cat, i) => ({
     data: aggregates.map((a) => ({
