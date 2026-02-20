@@ -2,7 +2,7 @@
   "expo": {
     "name": "OpenBudget",
     "slug": "household-budget",
-    "version": "2.0.0",
+    "version": "0.1.0",
     "orientation": "default",
     "icon": "./resources/icon.png",
     "scheme": "household-budget",
@@ -17,8 +17,12 @@
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "com.apple.developer.icloud-container-identifiers": [
@@ -50,6 +54,12 @@
     },
     "android": {
       "package": "com.magicmirrorcreative.householdbudget"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4194602d-5ebd-4cbc-8e7b-a74813acf3e2"
+      }
     }
   }
 }
