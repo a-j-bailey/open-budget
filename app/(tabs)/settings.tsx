@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import type { Theme } from '../../hooks/useTheme'
@@ -20,10 +20,12 @@ const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
 
 function SectionCard({
   title,
+  headerRight,
   children,
   isDark,
 }: {
   title: string
+  headerRight?: React.ReactNode
   children: React.ReactNode
   isDark: boolean
 }) {
@@ -41,27 +43,34 @@ function SectionCard({
         ...(isDark ? cardShadowDark : cardShadow),
       }}
     >
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: '600',
-          color: isDark ? '#a8a29e' : '#78716c',
-          textTransform: 'uppercase',
-          letterSpacing: 0.6,
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? '#a8a29e' : '#78716c',
+            textTransform: 'uppercase',
+            letterSpacing: 0.6,
+          }}
+        >
+          {title}
+        </Text>
+        {headerRight}
+      </View>
       {children}
     </View>
   )
 }
 
 export default function SettingsScreen() {
+  const { width: windowWidth } = useWindowDimensions()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { theme, setTheme, isDark } = useThemeContext()
+  const syncColumnWidth = useMemo(
+    () => Math.floor((windowWidth - 12 * 2 - 14 * 2 - 10) / 2),
+    [windowWidth]
+  )
   const { rules, addRule, removeRule } = useRules()
   const { categories, addCategory, updateCategory, removeCategory } = useBudget()
 
@@ -273,8 +282,10 @@ export default function SettingsScreen() {
             </View>
           </SectionCard>
 
-          <SectionCard title="iCloud Sync" isDark={isDark}>
-            <View style={{ gap: 12 }}>
+          <SectionCard
+            title="iCloud Sync"
+            isDark={isDark}
+            headerRight={
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <View
                   style={{
@@ -289,28 +300,39 @@ export default function SettingsScreen() {
                           : '#ef4444',
                   }}
                 />
-                <Text style={{ fontSize: 14, color: muted }}>
+                <Text style={{ fontSize: 12, color: muted }}>
                   {iCloudAvailable === null
-                    ? 'Checking iCloud…'
+                    ? 'Checking…'
                     : iCloudAvailable
-                      ? 'iCloud available'
-                      : 'iCloud unavailable (sign in or enable iCloud Drive)'}
+                      ? 'Available'
+                      : 'Unavailable'}
                 </Text>
               </View>
-
-              <View style={{ gap: 6 }}>
-                <Text style={{ fontSize: 13, color: muted }}>
-                  Last pushed: {formatSyncTime(lastSync.lastPushAt)}
-                  {lastSync.lastPushCounts &&
-                    ` · ${lastSync.lastPushCounts.categories} categories, ${lastSync.lastPushCounts.rules} rules, ${lastSync.lastPushCounts.expenses} expenses`}
-                </Text>
-                <Text style={{ fontSize: 13, color: muted }}>
-                  Last pulled: {formatSyncTime(lastSync.lastPullAt)}
-                  {lastSync.lastPullCounts &&
-                    ` · ${lastSync.lastPullCounts.categories} categories, ${lastSync.lastPullCounts.rules} rules, ${lastSync.lastPullCounts.expenses} expenses`}
-                </Text>
-              </View>
-
+            }
+          >
+            <View style={{ gap: 12 }}>
+              {iCloudAvailable === false && (
+                <View
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                    backgroundColor: isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.12)',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.25)',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: isDark ? '#fcd34d' : '#b45309',
+                      lineHeight: 20,
+                    }}
+                  >
+                    iCloud is unavailable. Sign in with your Apple ID in Settings → [your name], and make sure iCloud Drive is turned on.
+                  </Text>
+                </View>
+              )}
               {syncMessage && (
                 <View
                   style={{
@@ -335,46 +357,66 @@ export default function SettingsScreen() {
                 </View>
               )}
 
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable
-                  onPress={handlePush}
-                  disabled={pushLoading || pullLoading}
-                  style={{
-                    flex: 1,
-                    backgroundColor: pushLoading ? '#94a3b8' : '#0ea5e9',
-                    borderRadius: 10,
-                    paddingVertical: 12,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: 48,
-                  }}
-                >
-                  {pushLoading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Push to iCloud</Text>
-                  )}
-                </Pressable>
-                <Pressable
-                  onPress={handlePull}
-                  disabled={pushLoading || pullLoading}
-                  style={{
-                    flex: 1,
-                    backgroundColor: pullLoading ? '#94a3b8' : '#10b981',
-                    borderRadius: 10,
-                    paddingVertical: 12,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: 48,
-                  }}
-                >
-                  {pullLoading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
-                  )}
-                </Pressable>
-              </View>
+              {iCloudAvailable === true && (
+                <>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <Pressable
+                      onPress={handlePush}
+                      disabled={iCloudAvailable !== true || pushLoading || pullLoading}
+                      style={{
+                        flex: 1,
+                        backgroundColor: pushLoading ? '#94a3b8' : '#0ea5e9',
+                        borderRadius: 10,
+                        paddingVertical: 12,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: 48,
+                      }}
+                    >
+                      {pushLoading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Push to iCloud</Text>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      onPress={handlePull}
+                      disabled={iCloudAvailable !== true || pushLoading || pullLoading}
+                      style={{
+                        flex: 1,
+                        backgroundColor: pullLoading ? '#94a3b8' : '#10b981',
+                        borderRadius: 10,
+                        paddingVertical: 12,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: 48,
+                      }}
+                    >
+                      {pullLoading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ width: syncColumnWidth }}>
+                      <Text style={{ fontSize: 13, color: muted }}>
+                        Last pushed: {formatSyncTime(lastSync.lastPushAt)}
+                        {lastSync.lastPushCounts != null &&
+                          ` · ${lastSync.lastPushCounts.categories} categories, ${lastSync.lastPushCounts.rules} rules, ${lastSync.lastPushCounts.expenses} expenses`}
+                      </Text>
+                    </View>
+                    <View style={{ width: syncColumnWidth }}>
+                      <Text style={{ fontSize: 13, color: muted }}>
+                        Last pulled: {formatSyncTime(lastSync.lastPullAt)}
+                        {lastSync.lastPullCounts != null &&
+                          ` · ${lastSync.lastPullCounts.categories} categories, ${lastSync.lastPullCounts.rules} rules, ${lastSync.lastPullCounts.expenses} expenses`}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
           </SectionCard>
 
