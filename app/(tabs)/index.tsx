@@ -1,6 +1,6 @@
 import { ScrollView, Text, View } from 'react-native'
 import { useState } from 'react'
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react-native'
+import { ArrowDownCircle, ArrowUpCircle, TrendingDown, TrendingUp } from 'lucide-react-native'
 import { useBudget } from '../../hooks/useBudget'
 import { useAllExpenses } from '../../hooks/useExpenses'
 import { useMonthlyTotals, useMonthlyTotalsForMonth } from '../../hooks/useMonthlyTotals'
@@ -30,6 +30,14 @@ export default function Dashboard() {
 
   const aggregates = useMonthlyTotals(expenses)
   const { byCategory, total, income } = useMonthlyTotalsForMonth(expenses, selectedMonth)
+  const prevMonthKey =
+    selectedMonth &&
+    (() => {
+      const [y, m] = selectedMonth.split('-').map(Number)
+      if (m <= 1) return `${y - 1}-12`
+      return `${y}-${String(m - 1).padStart(2, '0')}`
+    })()
+  const prevByCategory = aggregates.find((a) => a.monthKey === prevMonthKey)?.byCategory ?? {}
 
   const totalByMonthData = aggregates.map((a) => ({
     monthKey: a.monthKey,
@@ -63,10 +71,10 @@ export default function Dashboard() {
       style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 32,
-        gap: 24,
+        paddingHorizontal: 12,
+        paddingTop: 12,
+        paddingBottom: 20,
+        gap: 14,
       }}
       showsVerticalScrollIndicator={false}
     >
@@ -87,9 +95,9 @@ export default function Dashboard() {
       <View
         style={{
           backgroundColor: bg,
-          borderRadius: 20,
+          borderRadius: 14,
           borderCurve: 'continuous',
-          padding: 20,
+          padding: 14,
           borderWidth: 1,
           borderColor: border,
           ...cardShadow,
@@ -99,21 +107,21 @@ export default function Dashboard() {
           style={{
             fontSize: 13,
             color: mutedColor,
-            marginBottom: 16,
+            marginBottom: 10,
             textTransform: 'uppercase',
             letterSpacing: 0.5,
           }}
         >
           {selectedMonth}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <ArrowDownCircle size={20} color="#16a34a" />
           <Text style={{ fontSize: 15, color: bodyColor, flex: 1 }}>Income</Text>
           <Text selectable style={{ fontSize: 16, fontWeight: '600', color: '#16a34a' }}>
             +${income.toFixed(2)}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <ArrowUpCircle size={20} color="#dc2626" />
           <Text style={{ fontSize: 15, color: bodyColor, flex: 1 }}>Expenses</Text>
           <Text selectable style={{ fontSize: 16, fontWeight: '600', color: '#dc2626' }}>
@@ -124,7 +132,7 @@ export default function Dashboard() {
           style={{
             borderTopWidth: 1,
             borderTopColor: border,
-            paddingTop: 16,
+            paddingTop: 10,
           }}
         >
           <Text style={{ fontSize: 12, color: mutedColor, marginBottom: 4 }}>Net</Text>
@@ -146,23 +154,23 @@ export default function Dashboard() {
       <View
         style={{
           backgroundColor: bg,
-          borderRadius: 20,
+          borderRadius: 14,
           borderCurve: 'continuous',
-          padding: 20,
+          padding: 14,
           borderWidth: 1,
           borderColor: border,
           ...cardShadow,
         }}
       >
-        <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 12 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 10 }}>
           By category
         </Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           <View
             style={{
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
               backgroundColor: categoryTab === 'income' ? segmentActiveBg : 'transparent',
             }}
           >
@@ -179,9 +187,9 @@ export default function Dashboard() {
           </View>
           <View
             style={{
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
               backgroundColor: categoryTab === 'expenses' ? segmentActiveBg : 'transparent',
             }}
           >
@@ -202,16 +210,27 @@ export default function Dashboard() {
         ) : (
           visible.map((cat) => {
             const spent = byCategory[cat.id] ?? 0
-            const pct = cat.monthlyLimit > 0 ? Math.min(1, spent / cat.monthlyLimit) : 0
+            const prevSpent = prevByCategory[cat.id] ?? 0
+            const limit = cat.monthlyLimit
+            const isOverBudget = limit > 0 && spent > limit
+            const pct = limit > 0 ? Math.min(1, spent / limit) : 0
+            const barColor = isOverBudget ? '#dc2626' : '#0d9488'
+            const amountColor = isOverBudget ? '#dc2626' : mutedColor
+            const trendUp = spent > prevSpent
+            const trendDown = spent < prevSpent
             return (
-              <View key={cat.id} style={{ marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <Text style={{ fontSize: 14, color: bodyColor }}>{cat.name}</Text>
+              <View key={cat.id} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 14, color: bodyColor }}>{cat.name}</Text>
+                    {trendUp && <TrendingUp size={14} color={categoryTab === 'expenses' ? '#dc2626' : '#16a34a'} />}
+                    {trendDown && <TrendingDown size={14} color={categoryTab === 'expenses' ? '#16a34a' : '#dc2626'} />}
+                  </View>
                   <Text
                     selectable
-                    style={{ fontSize: 13, color: mutedColor, fontVariant: ['tabular-nums'] }}
+                    style={{ fontSize: 13, color: amountColor, fontVariant: ['tabular-nums'] }}
                   >
-                    ${spent.toFixed(2)} / ${cat.monthlyLimit.toFixed(2)}
+                    ${spent.toFixed(2)} / ${limit.toFixed(2)}
                   </Text>
                 </View>
                 <View
@@ -226,7 +245,7 @@ export default function Dashboard() {
                     style={{
                       height: '100%',
                       width: `${Math.max(4, pct * 100)}%`,
-                      backgroundColor: '#0d9488',
+                      backgroundColor: barColor,
                       borderRadius: 4,
                     }}
                   />
@@ -237,7 +256,7 @@ export default function Dashboard() {
         )}
       </View>
 
-      <View style={{ gap: 24 }}>
+      <View style={{ gap: 14 }}>
         <SpendingByCategoryPieChart
           data={chartDataByCategory}
           categories={categories}

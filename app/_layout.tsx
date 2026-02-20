@@ -16,7 +16,6 @@ function Header() {
 
   const bg = isDark ? '#0c0a09' : '#fafaf9'
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  const titleColor = isDark ? '#fafaf9' : '#1c1917'
 
   return (
     <View
@@ -29,9 +28,6 @@ function Header() {
         backgroundColor: bg,
       }}
     >
-      <Text style={{ fontSize: 17, fontWeight: '600', color: titleColor, letterSpacing: -0.4 }}>
-        Household Budget
-      </Text>
       {showMonthSelector ? (
         <View style={{ marginTop: 10 }}>
           <MonthSelector />

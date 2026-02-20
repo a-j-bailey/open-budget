@@ -71,12 +71,49 @@ Use `eas submit` for App Store submission after production builds.
 - `app.json` has iPad support enabled (`supportsTablet: true`, orientation config).
 - In Xcode/Apple Developer settings, enable "Mac (Designed for iPad)" to allow running the iPad build on macOS.
 
-## iCloud sync setup
+## Configure iCloud sync
 
-- Ensure iCloud entitlements in `app.json` match your Apple container:
-  - `iCloud.com.magicmirrorcreative.householdbudget`
-- Enable iCloud + Cloud Documents for the app ID in Apple Developer portal.
-- Use **Settings -> iCloud Sync** in app to push/pull snapshots.
+The app uses **iCloud Documents** (via `react-native-cloud-store`) to push/pull a single JSON snapshot of categories, rules, and expenses. No env vars are required; everything is driven by Apple’s iCloud entitlements and your App ID.
+
+### 1. Apple Developer Portal
+
+1. Go to [developer.apple.com](https://developer.apple.com) → **Certificates, Identifiers & Profiles** → **Identifiers**.
+2. Select your **App ID** (e.g. `com.magicmirrorcreative.householdbudget`). If you don’t have one, create an **App ID** and enable **iCloud** in Capabilities.
+3. With **iCloud** enabled, under **iCloud**, check **Cloud Documents** (or **iCloud Documents**).
+4. Under **iCloud Containers**, add or select a container. The project is set up to use:
+   - **Container ID**: `iCloud.com.magicmirrorcreative.householdbudget`
+   - You can create this container via the **+** next to “iCloud Containers” if it doesn’t exist.
+5. Save the identifier.
+
+### 2. App configuration (`app.json`)
+
+The repo is already configured for that container. In `app.json` → `expo.ios.entitlements` you should see:
+
+- `com.apple.developer.icloud-container-identifiers`: `["iCloud.com.magicmirrorcreative.householdbudget"]`
+- `com.apple.developer.icloud-services`: `["CloudDocuments"]`
+- `com.apple.developer.ubiquity-container-identifiers`: `["iCloud.com.magicmirrorcreative.householdbudget"]`
+
+If you use a **different** team or container, create a new iCloud container in the Developer portal and replace `iCloud.com.magicmirrorcreative.householdbudget` with your container ID in those three places. The app uses the **first** iCloud container in the entitlements as the default.
+
+### 3. Build and run
+
+- **Local device**: `npm run ios:device` (or `npx expo run:ios --device`) — Xcode will use the entitlements from the Expo-generated project.
+- **EAS**: `npm run build:dev` / `build:preview` / `build:prod` — EAS merges `app.json` entitlements into the native project.
+
+If iCloud doesn’t work after a build, open the project in Xcode (`ios/` after a prebuild, or the project Expo opens), select the app target → **Signing & Capabilities** and confirm **iCloud** is present and your container is checked.
+
+### 4. On the device
+
+- The device must be signed into **iCloud** (Settings → [your name]).
+- **Settings → [your name] → iCloud → iCloud Drive** should be on; optionally ensure the app is allowed if you’ve restricted iCloud Drive by app.
+
+### 5. In the app
+
+- Open **Settings** (tab) → **iCloud Sync**.
+- **Push to iCloud** — uploads the current snapshot (categories, rules, expenses) to iCloud.
+- **Pull from iCloud** — downloads the last snapshot and replaces local data (used on a new device or after reinstall).
+
+Sync is manual and snapshot-based: there is no automatic merging. The app also tries to pull once on launch (`syncFromCloudIfAvailable` in the root layout) so a fresh install can load the latest snapshot if one exists.
 
 ## Data migration (from Electron version)
 

@@ -1,5 +1,5 @@
+import { File } from 'expo-file-system'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { parseCSVToExpenses } from './csvParse'
 import { replaceAllExpenses, replaceCategories, replaceRules } from './db'
@@ -7,8 +7,9 @@ import type { BudgetConfig, RulesConfig } from '../types'
 
 export const MIGRATION_DONE_KEY = 'household-budget-rn-migrated'
 
-async function readUri(uri: string): Promise<string> {
-  return FileSystem.readAsStringAsync(uri)
+async function readPickedFile(uri: string): Promise<string> {
+  const file = new File(uri)
+  return file.text()
 }
 
 export async function isMigrationDone() {
@@ -32,8 +33,8 @@ export async function runMigrationFromFiles() {
   const allExpenses = []
 
   for (const asset of picked.assets) {
-    const name = asset.name.toLowerCase()
-    const content = await readUri(asset.uri)
+    const name = (asset.name ?? '').toLowerCase()
+    const content = await readPickedFile(asset.uri)
     if (name === 'config.json') {
       config = JSON.parse(content) as BudgetConfig
     } else if (name === 'rules.json') {

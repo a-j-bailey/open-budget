@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   Switch,
@@ -9,8 +10,9 @@ import {
   View,
 } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
 import { Receipt } from 'lucide-react-native'
+import type { ExpenseRow } from '../../types'
 import { useMonth } from '../../contexts/MonthContext'
 import { useExpenses } from '../../hooks/useExpenses'
 import { useBudget } from '../../hooks/useBudget'
@@ -18,9 +20,6 @@ import { useRules, applyRules } from '../../hooks/useRules'
 import { useThemeContext } from '../../contexts/ThemeContext'
 
 const today = () => new Date().toISOString().slice(0, 10)
-
-const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
-const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
 
 export default function ExpensesScreen() {
   const { selectedMonth } = useMonth()
@@ -49,6 +48,15 @@ export default function ExpensesScreen() {
     budgetCategoryId: '' as string | null,
     ignored: false,
   })
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState({
+    transactionDate: '',
+    description: '',
+    amount: '',
+    isIncome: false,
+    budgetCategoryId: '' as string | null,
+    ignored: false,
+  })
 
   const runImport = async () => {
     const picked = await DocumentPicker.getDocumentAsync({
@@ -56,7 +64,8 @@ export default function ExpensesScreen() {
       copyToCacheDirectory: true,
     })
     if (picked.canceled || picked.assets.length === 0) return
-    const text = await FileSystem.readAsStringAsync(picked.assets[0].uri)
+    const file = new File(picked.assets[0].uri)
+    const text = await file.text()
     if (!text.trim()) {
       setImportMessage('File is empty.')
       return
@@ -103,6 +112,52 @@ export default function ExpensesScreen() {
     setShowAddForm(false)
   }
 
+  const openEditSheet = useCallback((row: ExpenseRow) => {
+    const idx = expenses.findIndex(
+      (e) =>
+        e.transactionDate === row.transactionDate &&
+        e.description === row.description &&
+        e.debit === row.debit &&
+        e.credit === row.credit
+    )
+    if (idx < 0) return
+    const isCredit = (parseFloat(row.credit) || 0) > 0
+    const amount = isCredit ? row.credit : row.debit
+    setEditForm({
+      transactionDate: row.transactionDate,
+      description: row.description,
+      amount,
+      isIncome: isCredit,
+      budgetCategoryId: row.budgetCategoryId ?? '',
+      ignored: row.ignored,
+    })
+    setEditingIndex(idx)
+  }, [expenses])
+
+  const handleSaveEdit = useCallback(() => {
+    if (editingIndex == null || !editForm.description.trim() || !editForm.amount.trim()) return
+    const next = expenses.map((row, i) => {
+      if (i !== editingIndex) return row
+      return {
+        ...row,
+        transactionDate: editForm.transactionDate.trim(),
+        description: editForm.description.trim(),
+        debit: editForm.isIncome ? '0' : editForm.amount.trim().replace(/[,$]/g, ''),
+        credit: editForm.isIncome ? editForm.amount.trim().replace(/[,$]/g, '') : '0',
+        budgetCategoryId: editForm.budgetCategoryId === '' ? null : editForm.budgetCategoryId,
+        ignored: editForm.ignored,
+      }
+    })
+    setAllExpenses(next)
+    setEditingIndex(null)
+  }, [editingIndex, editForm, expenses, setAllExpenses])
+
+  const handleDeleteFromEdit = useCallback(() => {
+    if (editingIndex == null) return
+    deleteRow(editingIndex)
+    setEditingIndex(null)
+  }, [editingIndex, deleteRow])
+
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return expenses
@@ -127,18 +182,19 @@ export default function ExpensesScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
+      <View style={{ flex: 1, padding: 14, justifyContent: 'center' }}>
         <Text style={{ fontSize: 28, fontWeight: '700', color: label, letterSpacing: -0.6 }}>Transactions</Text>
-        <Text style={{ marginTop: 12, fontSize: 16, color: muted }}>Loading…</Text>
+        <Text style={{ marginTop: 10, fontSize: 16, color: muted }}>Loading…</Text>
       </View>
     )
   }
 
   return (
+    <>
     <ScrollView
       style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}
     >
       <Text
@@ -147,20 +203,20 @@ export default function ExpensesScreen() {
           fontWeight: '700',
           color: label,
           letterSpacing: -0.6,
-          marginBottom: 20,
+          marginBottom: 14,
         }}
       >
         Transactions
       </Text>
 
       {/* Action bar: primary and secondary buttons */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <Pressable
           onPress={runImport}
           style={{
-            paddingVertical: 12,
-            paddingHorizontal: 18,
-            borderRadius: 12,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            borderRadius: 10,
             borderWidth: 1,
             borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
             backgroundColor: 'transparent',
@@ -171,9 +227,9 @@ export default function ExpensesScreen() {
         <Pressable
           onPress={() => setShowAddForm((v) => !v)}
           style={{
-            paddingVertical: 12,
-            paddingHorizontal: 18,
-            borderRadius: 12,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            borderRadius: 10,
             backgroundColor: '#10b981',
           }}
         >
@@ -182,9 +238,9 @@ export default function ExpensesScreen() {
         <Pressable
           onPress={reapplyRules}
           style={{
-            paddingVertical: 12,
-            paddingHorizontal: 18,
-            borderRadius: 12,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            borderRadius: 10,
             borderWidth: 1,
             borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
             backgroundColor: 'transparent',
@@ -195,12 +251,12 @@ export default function ExpensesScreen() {
       </View>
 
       {error ? (
-        <View style={{ marginBottom: 12, padding: 12, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 12 }}>
+        <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 10 }}>
           <Text selectable style={{ fontSize: 14, color: '#ef4444' }}>{error}</Text>
         </View>
       ) : null}
       {importMessage ? (
-        <View style={{ marginBottom: 12, padding: 12, backgroundColor: 'rgba(16,185,129,0.12)', borderRadius: 12 }}>
+        <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderRadius: 10 }}>
           <Text selectable style={{ fontSize: 14, color: '#10b981' }}>{importMessage}</Text>
         </View>
       ) : null}
@@ -210,15 +266,15 @@ export default function ExpensesScreen() {
         <View
           style={{
             backgroundColor: bg,
-            borderRadius: 20,
-            padding: 20,
+            borderRadius: 14,
+            padding: 14,
             borderWidth: 1,
             borderColor: border,
-            marginBottom: 20,
+            marginBottom: 14,
             ...(isDark ? cardShadowDark : cardShadow),
           }}
         >
-          <Text style={{ fontSize: 17, fontWeight: '600', color: label, marginBottom: 16 }}>Add transaction</Text>
+          <Text style={{ fontSize: 17, fontWeight: '600', color: label, marginBottom: 12 }}>Add transaction</Text>
           <TextInput
             value={addForm.transactionDate}
             onChangeText={(value) => setAddForm((f) => ({ ...f, transactionDate: value }))}
@@ -226,14 +282,14 @@ export default function ExpensesScreen() {
             placeholderTextColor={muted}
             style={{
               backgroundColor: inputBg,
-              borderRadius: 12,
+              borderRadius: 10,
               borderWidth: 1,
               borderColor: border,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
               fontSize: 15,
               color: label,
-              marginBottom: 10,
+              marginBottom: 8,
             }}
           />
           <TextInput
@@ -243,14 +299,14 @@ export default function ExpensesScreen() {
             placeholderTextColor={muted}
             style={{
               backgroundColor: inputBg,
-              borderRadius: 12,
+              borderRadius: 10,
               borderWidth: 1,
               borderColor: border,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
               fontSize: 15,
               color: label,
-              marginBottom: 10,
+              marginBottom: 8,
             }}
           />
           <TextInput
@@ -261,24 +317,24 @@ export default function ExpensesScreen() {
             placeholderTextColor={muted}
             style={{
               backgroundColor: inputBg,
-              borderRadius: 12,
+              borderRadius: 10,
               borderWidth: 1,
               borderColor: border,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
               fontSize: 15,
               color: label,
-              marginBottom: 14,
+              marginBottom: 10,
             }}
           />
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={{ fontSize: 15, color: muted }}>Income</Text>
             <Switch
               value={addForm.isIncome}
               onValueChange={(value) => setAddForm((f) => ({ ...f, isIncome: value }))}
             />
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontSize: 15, color: muted }}>Ignore</Text>
             <Switch
               value={addForm.ignored}
@@ -287,7 +343,7 @@ export default function ExpensesScreen() {
           </View>
           <Pressable
             onPress={handleAddExpense}
-            style={{ backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
+            style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
           >
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Save</Text>
           </Pressable>
@@ -298,8 +354,8 @@ export default function ExpensesScreen() {
       <View
         style={{
           backgroundColor: inputBg,
-          borderRadius: 12,
-          marginBottom: 20,
+          borderRadius: 10,
+          marginBottom: 14,
           borderWidth: 1,
           borderColor: border,
         }}
@@ -310,8 +366,8 @@ export default function ExpensesScreen() {
           placeholder="Search transactions…"
           placeholderTextColor={muted}
           style={{
-            paddingHorizontal: 16,
-            paddingVertical: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
             fontSize: 16,
             color: label,
           }}
@@ -323,121 +379,220 @@ export default function ExpensesScreen() {
         <View
           style={{
             backgroundColor: bg,
-            borderRadius: 20,
-            padding: 32,
+            borderRadius: 14,
+            padding: 20,
             borderWidth: 1,
             borderColor: border,
             alignItems: 'center',
             ...(isDark ? cardShadowDark : cardShadow),
           }}
         >
-          <View style={{ marginBottom: 16, opacity: 0.5 }}>
+          <View style={{ marginBottom: 12, opacity: 0.5 }}>
             <Receipt size={48} color={muted} />
           </View>
-          <Text style={{ fontSize: 18, fontWeight: '600', color: label, marginBottom: 8, textAlign: 'center' }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: label, marginBottom: 6, textAlign: 'center' }}>
             No transactions yet
           </Text>
-          <Text style={{ fontSize: 15, color: muted, marginBottom: 20, textAlign: 'center' }}>
+          <Text style={{ fontSize: 15, color: muted, marginBottom: 14, textAlign: 'center' }}>
             Import a CSV or add your first transaction to get started.
           </Text>
           <Pressable
             onPress={() => setShowAddForm(true)}
-            style={{ backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24 }}
+            style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 }}
           >
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add transaction</Text>
           </Pressable>
         </View>
       ) : (
-        <View style={{ gap: 12 }}>
-          {filtered.map((row) => {
-            const index = expenses.findIndex(
-              (e) =>
-                e.transactionDate === row.transactionDate &&
-                e.description === row.description &&
-                e.debit === row.debit &&
-                e.credit === row.credit
-            )
+        <View style={{ paddingBottom: 20 }}>
+          {filtered.map((row, i) => {
             const isCredit = (parseFloat(row.credit) || 0) > 0
             const amountColor = isCredit ? '#16a34a' : '#dc2626'
+            const categoryName =
+              row.budgetCategoryId && categories.find((c) => c.id === row.budgetCategoryId)?.name
             return (
-              <View
-                key={`${row.transactionDate}-${row.description}-${row.debit}-${row.credit}`}
-                style={{
-                  backgroundColor: bg,
-                  borderRadius: 16,
-                  padding: 16,
-                  borderWidth: 1,
-                  borderColor: border,
-                  ...(isDark ? cardShadowDark : cardShadow),
-                }}
-              >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: label, flex: 1 }} numberOfLines={2}>
-                    {row.description}
-                  </Text>
+              <View key={`${row.transactionDate}-${row.description}-${row.debit}-${row.credit}`}>
+                {i > 0 ? <View style={{ height: 1, backgroundColor: border }} /> : null}
+                <Pressable
+                  onPress={() => openEditSheet(row)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 12,
+                    paddingHorizontal: 4,
+                    backgroundColor: bg,
+                  }}
+                >
+                  <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: label }} numberOfLines={1}>
+                      {row.description}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: muted, marginTop: 2 }} numberOfLines={1}>
+                      {row.transactionDate} · {categoryName || row.category || 'Uncategorized'}
+                    </Text>
+                  </View>
                   <Text
-                    selectable
                     style={{
                       fontSize: 16,
                       fontWeight: '700',
                       color: amountColor,
                       fontVariant: ['tabular-nums'],
-                      marginLeft: 12,
                     }}
                   >
                     {isCredit ? '+' : '-'}${isCredit ? row.credit : row.debit}
                   </Text>
-                </View>
-                <Text style={{ fontSize: 12, color: muted, marginBottom: 12 }}>
-                  {row.transactionDate} · {row.category || 'Uncategorized'}
-                </Text>
-
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                  {categories.map((cat) => (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => updateRow(index, { budgetCategoryId: cat.id, ignored: false })}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                        backgroundColor: row.budgetCategoryId === cat.id ? '#0ea5e9' : segmentBg,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: '500',
-                          color: row.budgetCategoryId === cat.id ? '#fff' : label,
-                        }}
-                      >
-                        {cat.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 13, color: muted }}>Ignore</Text>
-                    <Switch value={row.ignored} onValueChange={(value) => updateRow(index, { ignored: value })} />
-                  </View>
-                  <Pressable
-                    onPress={() =>
-                      Alert.alert('Delete transaction', `Delete "${row.description}"?`, [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteRow(index) },
-                      ])
-                    }
-                  >
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef4444' }}>Delete</Text>
-                  </Pressable>
-                </View>
+                </Pressable>
               </View>
             )
           })}
         </View>
       )}
     </ScrollView>
+
+      {/* Edit expense sheet */}
+      <Modal
+        visible={editingIndex !== null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditingIndex(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: bg }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: border,
+            }}
+          >
+            <Pressable onPress={() => setEditingIndex(null)} hitSlop={12}>
+              <Text style={{ fontSize: 17, color: '#0ea5e9' }}>Cancel</Text>
+            </Pressable>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: label }}>Edit transaction</Text>
+            <Pressable onPress={handleSaveEdit} hitSlop={12}>
+              <Text style={{ fontSize: 17, fontWeight: '600', color: '#10b981' }}>Save</Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <TextInput
+              value={editForm.transactionDate}
+              onChangeText={(v) => setEditForm((f) => ({ ...f, transactionDate: v }))}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 8,
+              }}
+            />
+            <TextInput
+              value={editForm.description}
+              onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+              placeholder="Description"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 8,
+              }}
+            />
+            <TextInput
+              value={editForm.amount}
+              onChangeText={(v) => setEditForm((f) => ({ ...f, amount: v }))}
+              keyboardType="decimal-pad"
+              placeholder="Amount"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 8,
+              }}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 15, color: muted }}>Income</Text>
+              <Switch
+                value={editForm.isIncome}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, isIncome: v }))}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 15, color: muted }}>Ignore</Text>
+              <Switch
+                value={editForm.ignored}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, ignored: v }))}
+              />
+            </View>
+            <Text style={{ fontSize: 15, color: muted, marginBottom: 8 }}>Category</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+              {categories.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 10,
+                    backgroundColor: editForm.budgetCategoryId === cat.id ? '#0ea5e9' : segmentBg,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '500',
+                      color: editForm.budgetCategoryId === cat.id ? '#fff' : label,
+                    }}
+                  >
+                    {cat.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable
+              onPress={() =>
+                Alert.alert('Delete transaction', 'Delete this transaction?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: handleDeleteFromEdit },
+                ])
+              }
+              style={{
+                paddingVertical: 12,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(239,68,68,0.5)',
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#ef4444' }}>Delete transaction</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+    </>
   )
 }

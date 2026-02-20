@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import type { Theme } from '../../hooks/useTheme'
 import { useRules } from '../../hooks/useRules'
@@ -27,8 +28,8 @@ function SectionCard({
     <View
       style={{
         backgroundColor: bg,
-        borderRadius: 20,
-        padding: 20,
+        borderRadius: 14,
+        padding: 14,
         borderWidth: 1,
         borderColor: border,
         ...(isDark ? cardShadowDark : cardShadow),
@@ -41,7 +42,7 @@ function SectionCard({
           color: isDark ? '#a8a29e' : '#78716c',
           textTransform: 'uppercase',
           letterSpacing: 0.6,
-          marginBottom: 14,
+          marginBottom: 10,
         }}
       >
         {title}
@@ -52,6 +53,7 @@ function SectionCard({
 }
 
 export default function SettingsScreen() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { theme, setTheme, isDark } = useThemeContext()
   const { rules, addRule, removeRule } = useRules()
@@ -102,7 +104,7 @@ export default function SettingsScreen() {
     <ScrollView
       style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 24 }}
+      contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20, gap: 14 }}
       showsVerticalScrollIndicator={false}
     >
       <Text
@@ -111,7 +113,7 @@ export default function SettingsScreen() {
           fontWeight: '700',
           color: label,
           letterSpacing: -0.6,
-          marginBottom: 8,
+          marginBottom: 6,
         }}
       >
         Settings
@@ -122,7 +124,7 @@ export default function SettingsScreen() {
         style={{
           flexDirection: 'row',
           backgroundColor: segmentBg,
-          borderRadius: 12,
+          borderRadius: 10,
           padding: 4,
         }}
       >
@@ -132,8 +134,8 @@ export default function SettingsScreen() {
             onPress={() => setActiveTab(tab)}
             style={{
               flex: 1,
-              paddingVertical: 10,
-              borderRadius: 10,
+              paddingVertical: 8,
+              borderRadius: 8,
               backgroundColor: activeTab === tab ? segmentActive : 'transparent',
               alignItems: 'center',
             }}
@@ -155,15 +157,15 @@ export default function SettingsScreen() {
       {activeTab === 'settings' && (
         <>
           <SectionCard title="Appearance" isDark={isDark}>
-            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 12, padding: 4, gap: 0 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 10, padding: 4, gap: 0 }}>
               {(['light', 'dark', 'system'] as Theme[]).map((option) => (
                 <Pressable
                   key={option}
                   onPress={() => setThemeValue(option)}
                   style={{
                     flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: 10,
+                    paddingVertical: 8,
+                    borderRadius: 8,
                     backgroundColor: theme === option ? '#0ea5e9' : 'transparent',
                     alignItems: 'center',
                   }}
@@ -183,13 +185,13 @@ export default function SettingsScreen() {
           </SectionCard>
 
           <SectionCard title="iCloud Sync" isDark={isDark}>
-            <View style={{ gap: 12 }}>
+            <View style={{ gap: 10 }}>
               <Pressable
                 onPress={() => pushCloudSnapshot()}
                 style={{
                   backgroundColor: '#0ea5e9',
-                  borderRadius: 12,
-                  paddingVertical: 14,
+                  borderRadius: 10,
+                  paddingVertical: 12,
                   alignItems: 'center',
                 }}
               >
@@ -199,14 +201,33 @@ export default function SettingsScreen() {
                 onPress={() => syncFromCloudIfAvailable()}
                 style={{
                   backgroundColor: '#10b981',
-                  borderRadius: 12,
-                  paddingVertical: 14,
+                  borderRadius: 10,
+                  paddingVertical: 12,
                   alignItems: 'center',
                 }}
               >
                 <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
               </Pressable>
             </View>
+          </SectionCard>
+
+          <SectionCard title="Data" isDark={isDark}>
+            <Pressable
+              onPress={() => router.push('/migrate')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 10,
+                paddingHorizontal: 0,
+              }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '500', color: label }}>Migrate from desktop app</Text>
+              <Text style={{ fontSize: 15, color: muted }}>→</Text>
+            </Pressable>
+            <Text style={{ fontSize: 13, color: muted, marginTop: 2 }}>
+              Import config, rules, and expense CSVs from the old desktop app.
+            </Text>
           </SectionCard>
         </>
       )}
@@ -221,17 +242,17 @@ export default function SettingsScreen() {
               placeholderTextColor={muted}
               style={{
                 backgroundColor: inputBg,
-                borderRadius: 12,
+                borderRadius: 10,
                 borderWidth: 1,
                 borderColor: border,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
                 fontSize: 15,
                 color: label,
-                marginBottom: 12,
+                marginBottom: 10,
               }}
             />
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
               {(
                 [
                   { key: 'description' as const, label: 'Description' },
@@ -242,9 +263,9 @@ export default function SettingsScreen() {
                   key={key}
                   onPress={() => setSource(key)}
                   style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 8,
                     backgroundColor: source === key ? segmentActive : 'transparent',
                   }}
                 >
@@ -254,9 +275,9 @@ export default function SettingsScreen() {
               <Pressable
                 onPress={() => setTargetCategoryId('ignore')}
                 style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 8,
                   backgroundColor: targetCategoryId === 'ignore' ? segmentActive : 'transparent',
                 }}
               >
@@ -265,16 +286,16 @@ export default function SettingsScreen() {
                 </Text>
               </Pressable>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
                 {categories.map((cat) => (
                   <Pressable
                     key={cat.id}
                     onPress={() => setTargetCategoryId(cat.id)}
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      borderRadius: 20,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 10,
                       backgroundColor: targetCategoryId === cat.id ? '#0ea5e9' : segmentBg,
                     }}
                   >
@@ -287,7 +308,7 @@ export default function SettingsScreen() {
             </ScrollView>
             <Pressable
               onPress={handleAddRule}
-              style={{ backgroundColor: '#0ea5e9', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
+              style={{ backgroundColor: '#0ea5e9', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add rule</Text>
             </Pressable>
@@ -298,15 +319,15 @@ export default function SettingsScreen() {
               key={rule.id}
               style={{
                 backgroundColor: bg,
-                borderRadius: 16,
-                padding: 16,
+                borderRadius: 14,
+                padding: 14,
                 borderWidth: 1,
                 borderColor: border,
                 ...(isDark ? cardShadowDark : cardShadow),
               }}
             >
               <Text style={{ fontSize: 15, fontWeight: '600', color: label, marginBottom: 4 }}>{rule.pattern}</Text>
-              <Text style={{ fontSize: 13, color: muted, marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: muted, marginBottom: 10 }}>
                 match {rule.source} →{' '}
                 {rule.targetCategoryId === 'ignore'
                   ? 'Ignore'
@@ -314,7 +335,7 @@ export default function SettingsScreen() {
               </Text>
               <Pressable
                 onPress={() => removeRule(rule.id)}
-                style={{ alignSelf: 'flex-start', backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}
+                style={{ alignSelf: 'flex-start', backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
               >
                 <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Remove</Text>
               </Pressable>
@@ -326,13 +347,13 @@ export default function SettingsScreen() {
       {activeTab === 'budget' && (
         <>
           <SectionCard title="New category" isDark={isDark}>
-            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 12, padding: 4, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 10, padding: 4, marginBottom: 10 }}>
               <Pressable
                 onPress={() => setViewMode('debit')}
                 style={{
                   flex: 1,
-                  paddingVertical: 10,
-                  borderRadius: 10,
+                  paddingVertical: 8,
+                  borderRadius: 8,
                   backgroundColor: viewMode === 'debit' ? segmentActive : 'transparent',
                   alignItems: 'center',
                 }}
@@ -343,8 +364,8 @@ export default function SettingsScreen() {
                 onPress={() => setViewMode('credit')}
                 style={{
                   flex: 1,
-                  paddingVertical: 10,
-                  borderRadius: 10,
+                  paddingVertical: 8,
+                  borderRadius: 8,
                   backgroundColor: viewMode === 'credit' ? segmentActive : 'transparent',
                   alignItems: 'center',
                 }}
@@ -359,14 +380,14 @@ export default function SettingsScreen() {
               placeholderTextColor={muted}
               style={{
                 backgroundColor: inputBg,
-                borderRadius: 12,
+                borderRadius: 10,
                 borderWidth: 1,
                 borderColor: border,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
                 fontSize: 15,
                 color: label,
-                marginBottom: 10,
+                marginBottom: 8,
               }}
             />
             <TextInput
@@ -377,19 +398,19 @@ export default function SettingsScreen() {
               placeholderTextColor={muted}
               style={{
                 backgroundColor: inputBg,
-                borderRadius: 12,
+                borderRadius: 10,
                 borderWidth: 1,
                 borderColor: border,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
                 fontSize: 15,
                 color: label,
-                marginBottom: 14,
+                marginBottom: 10,
               }}
             />
             <Pressable
               onPress={handleAddCategory}
-              style={{ backgroundColor: '#0ea5e9', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
+              style={{ backgroundColor: '#0ea5e9', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add category</Text>
             </Pressable>
@@ -400,8 +421,8 @@ export default function SettingsScreen() {
               key={cat.id}
               style={{
                 backgroundColor: bg,
-                borderRadius: 16,
-                padding: 16,
+                borderRadius: 14,
+                padding: 14,
                 borderWidth: 1,
                 borderColor: border,
                 ...(isDark ? cardShadowDark : cardShadow),
@@ -412,14 +433,14 @@ export default function SettingsScreen() {
                 onChangeText={(value) => updateCategory(cat.id, { name: value })}
                 style={{
                   backgroundColor: inputBg,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   borderWidth: 1,
                   borderColor: border,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
                   fontSize: 15,
                   color: label,
-                  marginBottom: 10,
+                  marginBottom: 8,
                 }}
               />
               <TextInput
@@ -431,14 +452,14 @@ export default function SettingsScreen() {
                 keyboardType="decimal-pad"
                 style={{
                   backgroundColor: inputBg,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   borderWidth: 1,
                   borderColor: border,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
                   fontSize: 15,
                   color: label,
-                  marginBottom: 12,
+                  marginBottom: 10,
                 }}
               />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -447,7 +468,7 @@ export default function SettingsScreen() {
                 </Text>
                 <Pressable
                   onPress={() => removeCategory(cat.id)}
-                  style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}
+                  style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
                 >
                   <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Remove</Text>
                 </Pressable>
