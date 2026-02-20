@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StatusBar,
   Switch,
   Text,
   TextInput,
@@ -12,7 +13,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'
+import { DatePicker, Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui'
+import { datePickerStyle, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
 import { Check, Receipt } from 'lucide-react-native'
+import { NativeButton, NativeTextField, NativeToggle } from '../../components/swift-ui'
 import type { ExpenseRow } from '../../types'
 import { useMonth } from '../../contexts/MonthContext'
 import { useExpenses } from '../../hooks/useExpenses'
@@ -28,6 +32,23 @@ const SECTION_GAP = 20
 const today = () => new Date().toISOString().slice(0, 10)
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
+const isIOS = process.env.EXPO_OS === 'ios'
+
+const parseISODate = (value: string) => {
+  const [yearText, monthText, dayText] = value.split('-')
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return new Date()
+  return new Date(year, month - 1, day)
+}
+
+const formatISODate = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export default function ExpensesScreen() {
   const insets = useSafeAreaInsets()
@@ -182,6 +203,14 @@ export default function ExpensesScreen() {
     })
   }, [categories, expenses, searchQuery])
 
+  const editCategoryOptions = useMemo(
+    () =>
+      categories.filter((cat) =>
+        editForm.isIncome ? cat.type === 'income' : (cat.type ?? 'expense') === 'expense'
+      ),
+    [categories, editForm.isIncome]
+  )
+
   const bg = isDark ? '#1c1917' : '#ffffff'
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
   const label = isDark ? '#fafaf9' : '#1c1917'
@@ -200,263 +229,263 @@ export default function ExpensesScreen() {
 
   return (
     <>
-    <ScrollView
-      style={{ flex: 1 }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text
-        style={{
-          fontSize: 28,
-          fontWeight: '700',
-          color: label,
-          letterSpacing: -0.6,
-          marginBottom: 14,
-        }}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
       >
-        Transactions
-      </Text>
-
-      {/* Action bar: primary and secondary buttons */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        <Pressable
-          onPress={runImport}
+        <Text
           style={{
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
-            backgroundColor: 'transparent',
-          }}
-        >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: label }}>Import CSV</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setShowAddForm((v) => !v)}
-          style={{
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            borderRadius: 10,
-            backgroundColor: '#10b981',
-          }}
-        >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>{showAddForm ? 'Cancel' : 'Add'}</Text>
-        </Pressable>
-        <Pressable
-          onPress={reapplyRules}
-          style={{
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
-            backgroundColor: 'transparent',
-          }}
-        >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: label }}>Re-apply rules</Text>
-        </Pressable>
-      </View>
-
-      {error ? (
-        <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 10 }}>
-          <Text selectable style={{ fontSize: 14, color: '#ef4444' }}>{error}</Text>
-        </View>
-      ) : null}
-      {importMessage ? (
-        <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderRadius: 10 }}>
-          <Text selectable style={{ fontSize: 14, color: '#10b981' }}>{importMessage}</Text>
-        </View>
-      ) : null}
-
-      {/* Add transaction form card */}
-      {showAddForm && (
-        <View
-          style={{
-            backgroundColor: bg,
-            borderRadius: 14,
-            padding: 14,
-            borderWidth: 1,
-            borderColor: border,
-            marginBottom: 14,
-            ...(isDark ? cardShadowDark : cardShadow),
-          }}
-        >
-          <Text style={{ fontSize: 17, fontWeight: '600', color: label, marginBottom: 12 }}>Add transaction</Text>
-          <TextInput
-            value={addForm.transactionDate}
-            onChangeText={(value) => setAddForm((f) => ({ ...f, transactionDate: value }))}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={muted}
-            style={{
-              backgroundColor: inputBg,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: border,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              fontSize: 15,
-              color: label,
-              marginBottom: 8,
-            }}
-          />
-          <TextInput
-            value={addForm.description}
-            onChangeText={(value) => setAddForm((f) => ({ ...f, description: value }))}
-            placeholder="Description"
-            placeholderTextColor={muted}
-            style={{
-              backgroundColor: inputBg,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: border,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              fontSize: 15,
-              color: label,
-              marginBottom: 8,
-            }}
-          />
-          <TextInput
-            value={addForm.amount}
-            onChangeText={(value) => setAddForm((f) => ({ ...f, amount: value }))}
-            keyboardType="decimal-pad"
-            placeholder="Amount"
-            placeholderTextColor={muted}
-            style={{
-              backgroundColor: inputBg,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: border,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              fontSize: 15,
-              color: label,
-              marginBottom: 10,
-            }}
-          />
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 15, color: muted }}>Income</Text>
-            <Switch
-              value={addForm.isIncome}
-              onValueChange={(value) => setAddForm((f) => ({ ...f, isIncome: value }))}
-            />
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontSize: 15, color: muted }}>Ignore</Text>
-            <Switch
-              value={addForm.ignored}
-              onValueChange={(value) => setAddForm((f) => ({ ...f, ignored: value }))}
-            />
-          </View>
-          <Pressable
-            onPress={handleAddExpense}
-            style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Save</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Search bar */}
-      <View
-        style={{
-          backgroundColor: inputBg,
-          borderRadius: 10,
-          marginBottom: 14,
-          borderWidth: 1,
-          borderColor: border,
-        }}
-      >
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search transactions…"
-          placeholderTextColor={muted}
-          style={{
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            fontSize: 16,
+            fontSize: 28,
+            fontWeight: '700',
             color: label,
-          }}
-        />
-      </View>
-
-      {/* Empty state or list */}
-      {filtered.length === 0 ? (
-        <View
-          style={{
-            backgroundColor: bg,
-            borderRadius: 14,
-            padding: 20,
-            borderWidth: 1,
-            borderColor: border,
-            alignItems: 'center',
-            ...(isDark ? cardShadowDark : cardShadow),
+            letterSpacing: -0.6,
+            marginBottom: 14,
           }}
         >
-          <View style={{ marginBottom: 12, opacity: 0.5 }}>
-            <Receipt size={48} color={muted} />
-          </View>
-          <Text style={{ fontSize: 18, fontWeight: '600', color: label, marginBottom: 6, textAlign: 'center' }}>
-            No transactions yet
-          </Text>
-          <Text style={{ fontSize: 15, color: muted, marginBottom: 14, textAlign: 'center' }}>
-            Import a CSV or add your first transaction to get started.
-          </Text>
+          Transactions
+        </Text>
+
+        {/* Action bar: primary and secondary buttons */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <Pressable
-            onPress={() => setShowAddForm(true)}
-            style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 }}
+            onPress={runImport}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
+              backgroundColor: 'transparent',
+            }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add transaction</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: label }}>Import CSV</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setShowAddForm((v) => !v)}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              backgroundColor: '#10b981',
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>{showAddForm ? 'Cancel' : 'Add'}</Text>
+          </Pressable>
+          <Pressable
+            onPress={reapplyRules}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '600', color: label }}>Re-apply rules</Text>
           </Pressable>
         </View>
-      ) : (
-        <View style={{ paddingBottom: 20 }}>
-          {filtered.map((row, i) => {
-            const isCredit = (parseFloat(row.credit) || 0) > 0
-            const amountColor = isCredit ? '#16a34a' : '#dc2626'
-            const categoryName =
-              row.budgetCategoryId && categories.find((c) => c.id === row.budgetCategoryId)?.name
-            return (
-              <View key={`${row.transactionDate}-${row.description}-${row.debit}-${row.credit}`}>
-                {i > 0 ? <View style={{ height: 1, backgroundColor: border }} /> : null}
-                <Pressable
-                  onPress={() => openEditSheet(row)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 12,
-                    paddingHorizontal: 4,
-                  }}
-                >
-                  <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: label }} numberOfLines={1}>
-                      {row.description}
-                    </Text>
-                    <Text style={{ fontSize: 13, color: muted, marginTop: 2 }} numberOfLines={1}>
-                      {row.transactionDate} · {categoryName || row.category || 'Uncategorized'}
-                    </Text>
-                  </View>
-                  <Text
+
+        {error ? (
+          <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 10 }}>
+            <Text selectable style={{ fontSize: 14, color: '#ef4444' }}>{error}</Text>
+          </View>
+        ) : null}
+        {importMessage ? (
+          <View style={{ marginBottom: 10, padding: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderRadius: 10 }}>
+            <Text selectable style={{ fontSize: 14, color: '#10b981' }}>{importMessage}</Text>
+          </View>
+        ) : null}
+
+        {/* Add transaction form card */}
+        {showAddForm && (
+          <View
+            style={{
+              backgroundColor: bg,
+              borderRadius: 14,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: border,
+              marginBottom: 14,
+              ...(isDark ? cardShadowDark : cardShadow),
+            }}
+          >
+            <Text style={{ fontSize: 17, fontWeight: '600', color: label, marginBottom: 12 }}>Add transaction</Text>
+            <TextInput
+              value={addForm.transactionDate}
+              onChangeText={(value) => setAddForm((f) => ({ ...f, transactionDate: value }))}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 8,
+              }}
+            />
+            <TextInput
+              value={addForm.description}
+              onChangeText={(value) => setAddForm((f) => ({ ...f, description: value }))}
+              placeholder="Description"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 8,
+              }}
+            />
+            <TextInput
+              value={addForm.amount}
+              onChangeText={(value) => setAddForm((f) => ({ ...f, amount: value }))}
+              keyboardType="decimal-pad"
+              placeholder="Amount"
+              placeholderTextColor={muted}
+              style={{
+                backgroundColor: inputBg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: border,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                fontSize: 15,
+                color: label,
+                marginBottom: 10,
+              }}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 15, color: muted }}>Income</Text>
+              <Switch
+                value={addForm.isIncome}
+                onValueChange={(value) => setAddForm((f) => ({ ...f, isIncome: value }))}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 15, color: muted }}>Ignore</Text>
+              <Switch
+                value={addForm.ignored}
+                onValueChange={(value) => setAddForm((f) => ({ ...f, ignored: value }))}
+              />
+            </View>
+            <Pressable
+              onPress={handleAddExpense}
+              style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Save</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Search bar */}
+        <View
+          style={{
+            backgroundColor: inputBg,
+            borderRadius: 10,
+            marginBottom: 14,
+            borderWidth: 1,
+            borderColor: border,
+          }}
+        >
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search transactions…"
+            placeholderTextColor={muted}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              fontSize: 16,
+              color: label,
+            }}
+          />
+        </View>
+
+        {/* Empty state or list */}
+        {filtered.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: bg,
+              borderRadius: 14,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: border,
+              alignItems: 'center',
+              ...(isDark ? cardShadowDark : cardShadow),
+            }}
+          >
+            <View style={{ marginBottom: 12, opacity: 0.5 }}>
+              <Receipt size={48} color={muted} />
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '600', color: label, marginBottom: 6, textAlign: 'center' }}>
+              No transactions yet
+            </Text>
+            <Text style={{ fontSize: 15, color: muted, marginBottom: 14, textAlign: 'center' }}>
+              Import a CSV or add your first transaction to get started.
+            </Text>
+            <Pressable
+              onPress={() => setShowAddForm(true)}
+              style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add transaction</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ paddingBottom: 20 }}>
+            {filtered.map((row, i) => {
+              const isCredit = (parseFloat(row.credit) || 0) > 0
+              const amountColor = isCredit ? '#16a34a' : '#dc2626'
+              const categoryName =
+                row.budgetCategoryId && categories.find((c) => c.id === row.budgetCategoryId)?.name
+              return (
+                <View key={`${row.transactionDate}-${row.description}-${row.debit}-${row.credit}`}>
+                  {i > 0 ? <View style={{ height: 1, backgroundColor: border }} /> : null}
+                  <Pressable
+                    onPress={() => openEditSheet(row)}
                     style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      color: amountColor,
-                      fontVariant: ['tabular-nums'],
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 12,
+                      paddingHorizontal: 4,
                     }}
                   >
-                    {isCredit ? '+' : '-'}${isCredit ? row.credit : row.debit}
-                  </Text>
-                </Pressable>
-              </View>
-            )
-          })}
-        </View>
-      )}
-    </ScrollView>
+                    <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '600', color: label }} numberOfLines={1}>
+                        {row.description}
+                      </Text>
+                      <Text style={{ fontSize: 13, color: muted, marginTop: 2 }} numberOfLines={1}>
+                        {row.transactionDate} · {categoryName || row.category || 'Uncategorized'}
+                      </Text>
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: '700',
+                        color: amountColor,
+                        fontVariant: ['tabular-nums'],
+                      }}
+                    >
+                      {isCredit ? '+' : '-'}${isCredit ? row.credit : row.debit}
+                    </Text>
+                  </Pressable>
+                </View>
+              )
+            })}
+          </View>
+        )}
+      </ScrollView>
 
       {/* Edit transaction sheet — iOS inset grouped style */}
       <Modal
@@ -469,44 +498,29 @@ export default function ExpensesScreen() {
           {/* Sheet grabber + nav — compact top, respect safe area */}
           <View
             style={{
-              paddingTop: insets.top > 0 ? insets.top : 12,
-              paddingBottom: 6,
-              alignItems: 'center',
-            }}
-          >
-            <View
-              style={{
-                width: 36,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)',
-              }}
-            />
-          </View>
-          <View
-            style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: 16,
-              paddingBottom: 12,
+              padding: 16,
             }}
           >
-            <Pressable
+            <NativeButton
+              label="Cancel"
+              role="cancel"
+              iosButtonStyle="plain"
               onPress={() => setEditingIndex(null)}
-              hitSlop={12}
-              style={{ minWidth: 70, alignItems: 'flex-start' }}
-            >
-              <Text style={{ fontSize: 17, color: '#0a84ff' }}>Cancel</Text>
-            </Pressable>
+              fallbackTextColor="#0a84ff"
+              fallbackAlign="flex-start"
+              containerStyle={{ minWidth: 70, alignItems: 'flex-start' }}
+            />
             <Text style={{ fontSize: 17, fontWeight: '600', color: label }}>Edit transaction</Text>
-            <Pressable
+            <NativeButton
+              label="Save"
               onPress={handleSaveEdit}
-              hitSlop={12}
-              style={{ minWidth: 70, alignItems: 'flex-end' }}
-            >
-              <Text style={{ fontSize: 17, fontWeight: '600', color: '#34c759' }}>Save</Text>
-            </Pressable>
+              fallbackTextColor="#34c759"
+              fallbackAlign="flex-end"
+              containerStyle={{ minWidth: 70, alignItems: 'flex-end' }}
+            />
           </View>
           <ScrollView
             style={{ flex: 1 }}
@@ -539,19 +553,37 @@ export default function ExpensesScreen() {
                 }}
               >
                 <Text style={{ fontSize: 17, color: label, width: 100 }}>Date</Text>
-                <TextInput
-                  value={editForm.transactionDate}
-                  onChangeText={(v) => setEditForm((f) => ({ ...f, transactionDate: v }))}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={muted}
-                  style={{
-                    flex: 1,
-                    fontSize: 17,
-                    color: label,
-                    paddingVertical: 10,
-                    paddingLeft: 8,
-                  }}
-                />
+                {isIOS ? (
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Host matchContents>
+                      <DatePicker
+                        title="Date"
+                        selection={parseISODate(editForm.transactionDate)}
+                        displayedComponents={['date']}
+                        modifiers={[datePickerStyle('compact')]}
+                        onDateChange={(nextDate) =>
+                          setEditForm((f) => ({ ...f, transactionDate: formatISODate(nextDate) }))
+                        }
+                      />
+                    </Host>
+                  </View>
+                ) : (
+                  <NativeTextField
+                    value={editForm.transactionDate}
+                    onChangeText={(v) => setEditForm((f) => ({ ...f, transactionDate: v }))}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={muted}
+                    align="right"
+                    containerStyle={{ flex: 1 }}
+                    inputStyle={{
+                      flex: 1,
+                      fontSize: 17,
+                      color: label,
+                      paddingVertical: 10,
+                      paddingLeft: 8,
+                    }}
+                  />
+                )}
               </View>
               <View
                 style={{
@@ -564,12 +596,14 @@ export default function ExpensesScreen() {
                 }}
               >
                 <Text style={{ fontSize: 17, color: label, width: 100 }}>Description</Text>
-                <TextInput
+                <NativeTextField
                   value={editForm.description}
                   onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
                   placeholder="Payee or memo"
                   placeholderTextColor={muted}
-                  style={{
+                  align="right"
+                  containerStyle={{ flex: 1 }}
+                  inputStyle={{
                     flex: 1,
                     fontSize: 17,
                     color: label,
@@ -584,16 +618,20 @@ export default function ExpensesScreen() {
                   alignItems: 'center',
                   minHeight: ROW_MIN_HEIGHT,
                   paddingHorizontal: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: border,
                 }}
               >
                 <Text style={{ fontSize: 17, color: label, width: 100 }}>Amount</Text>
-                <TextInput
+                <NativeTextField
                   value={editForm.amount}
                   onChangeText={(v) => setEditForm((f) => ({ ...f, amount: v }))}
                   keyboardType="decimal-pad"
                   placeholder="0.00"
                   placeholderTextColor={muted}
-                  style={{
+                  align="right"
+                  containerStyle={{ flex: 1 }}
+                  inputStyle={{
                     flex: 1,
                     fontSize: 17,
                     color: label,
@@ -604,9 +642,92 @@ export default function ExpensesScreen() {
                   }}
                 />
               </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: isIOS ? 1 : 0,
+                  borderBottomColor: border,
+                }}
+              >
+                <Text style={{ fontSize: 17, color: label }}>Income</Text>
+                <NativeToggle
+                  value={editForm.isIncome}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, isIncome: v }))}
+                  trackColor={{ false: segmentBg, true: 'rgba(52, 199, 89, 0.35)' }}
+                  thumbColor={editForm.isIncome ? '#34c759' : undefined}
+                />
+              </View>
+              {isIOS ? (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    minHeight: ROW_MIN_HEIGHT,
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  <Text style={{ fontSize: 17, color: label, width: 100 }}>Category</Text>
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Host style={{ flex: 1, width: '100%' }}>
+                      <Picker<string>
+                        selection={editForm.budgetCategoryId ?? ''}
+                        onSelectionChange={(selection) => setEditForm((f) => ({ ...f, budgetCategoryId: selection }))}
+                        modifiers={[pickerStyle('menu')]}
+                      >
+                        <SwiftText modifiers={[tag('')]}>Uncategorized</SwiftText>
+                        {editCategoryOptions.map((cat) => (
+                          <SwiftText key={cat.id} modifiers={[tag(cat.id)]}>
+                            {cat.name}
+                          </SwiftText>
+                        ))}
+                      </Picker>
+                    </Host>
+                  </View>
+                </View>
+              ) : null}
             </View>
 
-            {/* Income & Ignore group */}
+            {!isIOS ? (
+              <View
+                style={{
+                  backgroundColor: bg,
+                  borderRadius: GROUP_RADIUS,
+                  overflow: 'hidden',
+                  borderCurve: 'continuous',
+                }}
+              >
+                {editCategoryOptions.map((cat, i) => {
+                  const selected = editForm.budgetCategoryId === cat.id
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        minHeight: ROW_MIN_HEIGHT,
+                        paddingHorizontal: 16,
+                        borderTopWidth: i === 0 ? 0 : 1,
+                        borderTopColor: border,
+                        backgroundColor: pressed ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
+                      })}
+                    >
+                      <Text style={{ fontSize: 17, color: label }}>{cat.name}</Text>
+                      {selected ? (
+                        <Check size={22} color="#0a84ff" strokeWidth={2.5} />
+                      ) : null}
+                    </Pressable>
+                  )
+                })}
+              </View>
+            ) : null}
+
+            {/* Ignore group */}
             <View
               style={{
                 backgroundColor: bg,
@@ -615,25 +736,6 @@ export default function ExpensesScreen() {
                 borderCurve: 'continuous',
               }}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  minHeight: ROW_MIN_HEIGHT,
-                  paddingHorizontal: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: border,
-                }}
-              >
-                <Text style={{ fontSize: 17, color: label }}>Income</Text>
-                <Switch
-                  value={editForm.isIncome}
-                  onValueChange={(v) => setEditForm((f) => ({ ...f, isIncome: v }))}
-                  trackColor={{ false: segmentBg, true: 'rgba(52, 199, 89, 0.35)' }}
-                  thumbColor={editForm.isIncome ? '#34c759' : undefined}
-                />
-              </View>
               <View
                 style={{
                   flexDirection: 'row',
@@ -644,7 +746,7 @@ export default function ExpensesScreen() {
                 }}
               >
                 <Text style={{ fontSize: 17, color: label }}>Ignore</Text>
-                <Switch
+                <NativeToggle
                   value={editForm.ignored}
                   onValueChange={(v) => setEditForm((f) => ({ ...f, ignored: v }))}
                   trackColor={{ false: segmentBg, true: 'rgba(255, 149, 0, 0.35)' }}
@@ -653,71 +755,27 @@ export default function ExpensesScreen() {
               </View>
             </View>
 
-            {/* Category — single-choice list (iOS style) */}
-            <View
-              style={{
-                backgroundColor: bg,
-                borderRadius: GROUP_RADIUS,
-                overflow: 'hidden',
-                borderCurve: 'continuous',
-              }}
-            >
-              {categories.map((cat, i) => {
-                const selected = editForm.budgetCategoryId === cat.id
-                return (
-                  <Pressable
-                    key={cat.id}
-                    onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
-                    style={({ pressed }) => ({
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      minHeight: ROW_MIN_HEIGHT,
-                      paddingHorizontal: 16,
-                      borderTopWidth: i === 0 ? 0 : 1,
-                      borderTopColor: border,
-                      backgroundColor: pressed ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
-                    })}
-                  >
-                    <Text style={{ fontSize: 17, color: label }}>{cat.name}</Text>
-                    {selected ? (
-                      <Check size={22} color="#0a84ff" strokeWidth={2.5} />
-                    ) : null}
-                  </Pressable>
-                )
-              })}
-            </View>
-
             {/* Delete group — aligned with other rows */}
-            <View
-              style={{
-                backgroundColor: bg,
-                borderRadius: GROUP_RADIUS,
-                overflow: 'hidden',
-                borderCurve: 'continuous',
+            <NativeButton
+              label="Delete transaction"
+              role="destructive"
+              iosButtonStyle="borderedProminent"
+              onPress={() =>
+                Alert.alert('Delete transaction', 'This cannot be undone.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: handleDeleteFromEdit },
+                ])
+              }
+              fallbackBackgroundColor="#ef4444"
+              fallbackTextColor="#ffffff"
+              fallbackAlign="center"
+              containerStyle={{
+                minHeight: ROW_MIN_HEIGHT,
+                justifyContent: 'center',
+                paddingHorizontal: 16,
+                alignItems: 'center',
               }}
-            >
-              <Pressable
-                onPress={() =>
-                  Alert.alert('Delete transaction', 'This cannot be undone.', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: handleDeleteFromEdit },
-                  ])
-                }
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: ROW_MIN_HEIGHT,
-                  paddingHorizontal: 16,
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <Text style={{ fontSize: 17, fontWeight: '400', color: '#ff3b30' }}>
-                  Delete transaction
-                </Text>
-              </Pressable>
-            </View>
+            />
           </ScrollView>
         </View>
       </Modal>

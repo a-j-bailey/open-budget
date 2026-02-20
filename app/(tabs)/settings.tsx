@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import { NativeButton, NativeSegmentedPicker, NativeTextField } from '../../components/swift-ui'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import type { Theme } from '../../hooks/useTheme'
 import { useRules } from '../../hooks/useRules'
@@ -196,7 +197,20 @@ export default function SettingsScreen() {
     setNewLimit('')
   }
 
-  const tabs: TabId[] = ['settings', 'rules', 'budget']
+  const tabOptions = [
+    { label: 'Settings', value: 'settings' as const },
+    { label: 'Rules', value: 'rules' as const },
+    { label: 'Budget', value: 'budget' as const },
+  ]
+  const themeOptions = [
+    { label: 'Light', value: 'light' as const },
+    { label: 'Dark', value: 'dark' as const },
+    { label: 'System', value: 'system' as const },
+  ]
+  const viewModeOptions = [
+    { label: 'Expense', value: 'debit' as const },
+    { label: 'Income', value: 'credit' as const },
+  ]
 
   return (
     <ScrollView
@@ -218,68 +232,28 @@ export default function SettingsScreen() {
       </Text>
 
       {/* Segmented control: Settings / Rules / Budget */}
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: segmentBg,
-          borderRadius: 10,
-          padding: 4,
-        }}
-      >
-        {tabs.map((tab) => (
-          <Pressable
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={{
-              flex: 1,
-              paddingVertical: 8,
-              borderRadius: 8,
-              backgroundColor: activeTab === tab ? segmentActive : 'transparent',
-              alignItems: 'center',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: activeTab === tab ? label : muted,
-                textTransform: 'capitalize',
-              }}
-            >
-              {tab}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <NativeSegmentedPicker
+        value={activeTab}
+        options={tabOptions}
+        onChange={setActiveTab}
+        fallbackBackgroundColor={segmentBg}
+        fallbackSelectedBackgroundColor={segmentActive}
+        fallbackTextColor={muted}
+        fallbackSelectedTextColor={label}
+      />
 
       {activeTab === 'settings' && (
         <>
           <SectionCard title="Appearance" isDark={isDark}>
-            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 10, padding: 4, gap: 0 }}>
-              {(['light', 'dark', 'system'] as Theme[]).map((option) => (
-                <Pressable
-                  key={option}
-                  onPress={() => setThemeValue(option)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    backgroundColor: theme === option ? '#0ea5e9' : 'transparent',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: '600',
-                      color: theme === option ? '#fff' : label,
-                    }}
-                  >
-                    {option}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <NativeSegmentedPicker
+              value={theme}
+              options={themeOptions}
+              onChange={setThemeValue}
+              fallbackBackgroundColor={segmentBg}
+              fallbackSelectedBackgroundColor={segmentActive}
+              fallbackTextColor={label}
+              fallbackSelectedTextColor={label}
+            />
           </SectionCard>
 
           <SectionCard
@@ -360,44 +334,22 @@ export default function SettingsScreen() {
               {iCloudAvailable === true && (
                 <>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <Pressable
+                    <NativeButton
+                      label={pushLoading ? 'Pushing…' : 'Push to iCloud'}
                       onPress={handlePush}
                       disabled={iCloudAvailable !== true || pushLoading || pullLoading}
-                      style={{
-                        flex: 1,
-                        backgroundColor: pushLoading ? '#94a3b8' : '#0ea5e9',
-                        borderRadius: 10,
-                        paddingVertical: 12,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minHeight: 48,
-                      }}
-                    >
-                      {pushLoading ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Push to iCloud</Text>
-                      )}
-                    </Pressable>
-                    <Pressable
+                      fallbackBackgroundColor={pushLoading ? '#94a3b8' : '#0ea5e9'}
+                      fallbackTextColor="#ffffff"
+                      containerStyle={{ flex: 1 }}
+                    />
+                    <NativeButton
+                      label={pullLoading ? 'Pulling…' : 'Pull from iCloud'}
                       onPress={handlePull}
                       disabled={iCloudAvailable !== true || pushLoading || pullLoading}
-                      style={{
-                        flex: 1,
-                        backgroundColor: pullLoading ? '#94a3b8' : '#10b981',
-                        borderRadius: 10,
-                        paddingVertical: 12,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minHeight: 48,
-                      }}
-                    >
-                      {pullLoading ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Pull from iCloud</Text>
-                      )}
-                    </Pressable>
+                      fallbackBackgroundColor={pullLoading ? '#94a3b8' : '#10b981'}
+                      fallbackTextColor="#ffffff"
+                      containerStyle={{ flex: 1 }}
+                    />
                   </View>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ width: syncColumnWidth }}>
@@ -444,12 +396,13 @@ export default function SettingsScreen() {
       {activeTab === 'rules' && (
         <>
           <SectionCard title="Add rule" isDark={isDark}>
-            <TextInput
+            <NativeTextField
               value={pattern}
               onChangeText={setPattern}
               placeholder="e.g. Audible or /^AMZN/"
               placeholderTextColor={muted}
-              style={{
+              containerStyle={{ marginBottom: 10 }}
+              inputStyle={{
                 backgroundColor: inputBg,
                 borderRadius: 10,
                 borderWidth: 1,
@@ -515,12 +468,12 @@ export default function SettingsScreen() {
                 ))}
               </View>
             </ScrollView>
-            <Pressable
+            <NativeButton
+              label="Add rule"
               onPress={handleAddRule}
-              style={{ backgroundColor: '#0ea5e9', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add rule</Text>
-            </Pressable>
+              fallbackBackgroundColor="#0ea5e9"
+              fallbackTextColor="#ffffff"
+            />
           </SectionCard>
 
           {rules.map((rule) => (
@@ -542,12 +495,15 @@ export default function SettingsScreen() {
                   ? 'Ignore'
                   : categories.find((c) => c.id === rule.targetCategoryId)?.name ?? rule.targetCategoryId}
               </Text>
-              <Pressable
+              <NativeButton
+                label="Remove"
+                role="destructive"
                 onPress={() => removeRule(rule.id)}
-                style={{ alignSelf: 'flex-start', backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Remove</Text>
-              </Pressable>
+                fallbackBackgroundColor="#ef4444"
+                fallbackTextColor="#ffffff"
+                fallbackAlign="flex-start"
+                containerStyle={{ alignSelf: 'flex-start' }}
+              />
             </View>
           ))}
         </>
@@ -556,38 +512,23 @@ export default function SettingsScreen() {
       {activeTab === 'budget' && (
         <>
           <SectionCard title="New category" isDark={isDark}>
-            <View style={{ flexDirection: 'row', backgroundColor: segmentBg, borderRadius: 10, padding: 4, marginBottom: 10 }}>
-              <Pressable
-                onPress={() => setViewMode('debit')}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  backgroundColor: viewMode === 'debit' ? segmentActive : 'transparent',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: viewMode === 'debit' ? label : muted }}>Expense</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setViewMode('credit')}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  backgroundColor: viewMode === 'credit' ? segmentActive : 'transparent',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: viewMode === 'credit' ? label : muted }}>Income</Text>
-              </Pressable>
-            </View>
-            <TextInput
+            <NativeSegmentedPicker
+              value={viewMode}
+              options={viewModeOptions}
+              onChange={setViewMode}
+              containerStyle={{ marginBottom: 10 }}
+              fallbackBackgroundColor={segmentBg}
+              fallbackSelectedBackgroundColor={segmentActive}
+              fallbackTextColor={muted}
+              fallbackSelectedTextColor={label}
+            />
+            <NativeTextField
               value={newName}
               onChangeText={setNewName}
               placeholder="Category name"
               placeholderTextColor={muted}
-              style={{
+              containerStyle={{ marginBottom: 8 }}
+              inputStyle={{
                 backgroundColor: inputBg,
                 borderRadius: 10,
                 borderWidth: 1,
@@ -599,13 +540,14 @@ export default function SettingsScreen() {
                 marginBottom: 8,
               }}
             />
-            <TextInput
+            <NativeTextField
               value={newLimit}
               onChangeText={setNewLimit}
               keyboardType="decimal-pad"
               placeholder={viewMode === 'credit' ? 'Expected amount' : 'Monthly limit'}
               placeholderTextColor={muted}
-              style={{
+              containerStyle={{ marginBottom: 10 }}
+              inputStyle={{
                 backgroundColor: inputBg,
                 borderRadius: 10,
                 borderWidth: 1,
@@ -617,12 +559,12 @@ export default function SettingsScreen() {
                 marginBottom: 10,
               }}
             />
-            <Pressable
+            <NativeButton
+              label="Add category"
               onPress={handleAddCategory}
-              style={{ backgroundColor: '#0ea5e9', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add category</Text>
-            </Pressable>
+              fallbackBackgroundColor="#0ea5e9"
+              fallbackTextColor="#ffffff"
+            />
           </SectionCard>
 
           {visibleCategories.map((cat) => (
@@ -637,10 +579,11 @@ export default function SettingsScreen() {
                 ...(isDark ? cardShadowDark : cardShadow),
               }}
             >
-              <TextInput
+              <NativeTextField
                 value={cat.name}
                 onChangeText={(value) => updateCategory(cat.id, { name: value })}
-                style={{
+                containerStyle={{ marginBottom: 8 }}
+                inputStyle={{
                   backgroundColor: inputBg,
                   borderRadius: 10,
                   borderWidth: 1,
@@ -652,14 +595,15 @@ export default function SettingsScreen() {
                   marginBottom: 8,
                 }}
               />
-              <TextInput
+              <NativeTextField
                 value={String(cat.monthlyLimit)}
                 onChangeText={(value) => {
                   const next = parseFloat(value)
                   if (!Number.isNaN(next) && next >= 0) updateCategory(cat.id, { monthlyLimit: next })
                 }}
                 keyboardType="decimal-pad"
-                style={{
+                containerStyle={{ marginBottom: 10 }}
+                inputStyle={{
                   backgroundColor: inputBg,
                   borderRadius: 10,
                   borderWidth: 1,
@@ -675,12 +619,13 @@ export default function SettingsScreen() {
                 <Text style={{ fontSize: 12, color: muted }}>
                   {cat.type === 'income' ? 'Income category' : 'Expense category'}
                 </Text>
-                <Pressable
+                <NativeButton
+                  label="Remove"
+                  role="destructive"
                   onPress={() => removeCategory(cat.id)}
-                  style={{ backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Remove</Text>
-                </Pressable>
+                  fallbackBackgroundColor="#ef4444"
+                  fallbackTextColor="#ffffff"
+                />
               </View>
             </View>
           ))}
