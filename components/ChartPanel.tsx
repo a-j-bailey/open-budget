@@ -1,8 +1,12 @@
 import { ScrollView, Text, View } from 'react-native'
 import { BarChart, LineChart, PieChart } from 'react-native-gifted-charts'
 import type { BudgetCategory, MonthlyAggregate } from '../types'
+import { useThemeContext } from '../contexts/ThemeContext'
 
 const COLORS = ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+
+const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
+const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
 
 type SpendingByCategoryPieChartProps = {
   data: { name: string; [key: string]: string | number }[]
@@ -17,6 +21,7 @@ export function SpendingByCategoryPieChart({
   title,
   monthKey,
 }: SpendingByCategoryPieChartProps) {
+  const { isDark } = useThemeContext()
   const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]))
   const row = data[0]
   const pieData: { value: number; text: string; color: string }[] = []
@@ -33,12 +38,42 @@ export function SpendingByCategoryPieChart({
     }
   }
 
+  const bg = isDark ? '#1c1917' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const titleColor = isDark ? '#fafaf9' : '#1c1917'
+  const muted = isDark ? '#a8a29e' : '#78716c'
+
   return (
-    <View className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <Text className="mb-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</Text>
-      {monthKey ? <Text className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{monthKey}</Text> : null}
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: 20,
+        borderCurve: 'continuous',
+        padding: 20,
+        borderWidth: 1,
+        borderColor: border,
+        ...(isDark ? cardShadowDark : cardShadow),
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 15,
+          fontWeight: '600',
+          color: titleColor,
+          marginBottom: monthKey ? 4 : 12,
+        }}
+      >
+        {title}
+      </Text>
+      {monthKey ? (
+        <Text style={{ fontSize: 12, color: muted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {monthKey}
+        </Text>
+      ) : null}
       {pieData.length === 0 ? (
-        <Text className="text-sm text-zinc-500 dark:text-zinc-400">No data for this period.</Text>
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <Text style={{ fontSize: 15, color: muted }}>No data for this period.</Text>
+        </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <PieChart
@@ -47,7 +82,7 @@ export function SpendingByCategoryPieChart({
             radius={110}
             innerRadius={60}
             showText
-            textColor="#1f2937"
+            textColor={isDark ? '#fafaf9' : '#1f2937'}
             textSize={10}
             focusOnPress
             showGradient
@@ -65,17 +100,38 @@ export function TotalByMonthChart({
   data: { monthKey: string; income: number; expenses: number }[]
   title: string
 }) {
+  const { isDark } = useThemeContext()
   const chartData = data.map((d) => ({
     value: d.expenses,
     label: d.monthKey.slice(5),
     frontColor: '#ef4444',
-    topLabelComponent: () => <Text className="text-[10px] text-zinc-500">-${d.expenses.toFixed(0)}</Text>,
+    topLabelComponent: () => (
+      <Text style={{ fontSize: 10, color: isDark ? '#a8a29e' : '#78716c' }}>-${d.expenses.toFixed(0)}</Text>
+    ),
   }))
+
+  const bg = isDark ? '#1c1917' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const titleColor = isDark ? '#fafaf9' : '#1c1917'
+  const muted = isDark ? '#a8a29e' : '#78716c'
+
   return (
-    <View className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <Text className="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</Text>
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: 20,
+        borderCurve: 'continuous',
+        padding: 20,
+        borderWidth: 1,
+        borderColor: border,
+        ...(isDark ? cardShadowDark : cardShadow),
+      }}
+    >
+      <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 16 }}>{title}</Text>
       {chartData.length === 0 ? (
-        <Text className="text-sm text-zinc-500 dark:text-zinc-400">No data.</Text>
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <Text style={{ fontSize: 15, color: muted }}>No data.</Text>
+        </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <BarChart
@@ -105,12 +161,31 @@ export function SpendingByCategoryLineChart({
   categories: BudgetCategory[]
   title: string
 }) {
+  const { isDark } = useThemeContext()
   const expenseCategories = categories.filter((c) => (c.type ?? 'expense') === 'expense')
+
+  const bg = isDark ? '#1c1917' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const titleColor = isDark ? '#fafaf9' : '#1c1917'
+  const muted = isDark ? '#a8a29e' : '#78716c'
+
   if (!expenseCategories.length || !aggregates.length) {
     return (
-      <View className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Text className="mb-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</Text>
-        <Text className="text-sm text-zinc-500 dark:text-zinc-400">No data for this period.</Text>
+      <View
+        style={{
+          backgroundColor: bg,
+          borderRadius: 20,
+          borderCurve: 'continuous',
+          padding: 20,
+          borderWidth: 1,
+          borderColor: border,
+          ...(isDark ? cardShadowDark : cardShadow),
+        }}
+      >
+        <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 12 }}>{title}</Text>
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <Text style={{ fontSize: 15, color: muted }}>No data for this period.</Text>
+        </View>
       </View>
     )
   }
@@ -123,10 +198,20 @@ export function SpendingByCategoryLineChart({
   }))
 
   return (
-    <View className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <Text className="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</Text>
-      <Text className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-        Interactive trend for {category.name} (tap points)
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: 20,
+        borderCurve: 'continuous',
+        padding: 20,
+        borderWidth: 1,
+        borderColor: border,
+        ...(isDark ? cardShadowDark : cardShadow),
+      }}
+    >
+      <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 4 }}>{title}</Text>
+      <Text style={{ fontSize: 12, color: muted, marginBottom: 16 }}>
+        Trend for {category.name} (tap points)
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <LineChart
@@ -140,8 +225,8 @@ export function SpendingByCategoryLineChart({
           hideRules={false}
           isAnimated
           areaChart
-          startFillColor="#93c5fd"
-          endFillColor="#ffffff"
+          startFillColor={isDark ? '#1e3a5f' : '#93c5fd'}
+          endFillColor={isDark ? '#0c0a09' : '#ffffff'}
           startOpacity={0.4}
           endOpacity={0.05}
           focusEnabled

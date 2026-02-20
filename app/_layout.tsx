@@ -1,7 +1,7 @@
-import { Stack, usePathname, useRouter } from 'expo-router'
-import { Pressable, SafeAreaView, Text, View } from 'react-native'
-import { LayoutDashboard, Receipt, Settings as SettingsIcon } from 'lucide-react-native'
-import { ThemeProvider } from '../contexts/ThemeContext'
+import { Stack, usePathname } from 'expo-router'
+import { Text, View } from 'react-native'
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ThemeProvider, useThemeContext } from '../contexts/ThemeContext'
 import { MonthProvider } from '../contexts/MonthContext'
 import { MonthSelector } from '../components/MonthSelector'
 import { initDb } from '../lib/db'
@@ -10,42 +10,47 @@ import { syncFromCloudIfAvailable } from '../lib/cloudSync'
 
 function Header() {
   const pathname = usePathname()
-  const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const { isDark } = useThemeContext()
   const showMonthSelector = pathname === '/' || pathname === '/expenses'
 
-  const Item = ({
-    icon,
-    label,
-    path,
-  }: {
-    icon: React.ReactNode
-    label: string
-    path: '/' | '/expenses' | '/settings'
-  }) => {
-    const active = pathname === path
-    return (
-      <Pressable
-        onPress={() => router.push(path)}
-        className={`flex-row items-center gap-2 rounded-xl px-3 py-2 ${
-          active ? 'bg-zinc-200 dark:bg-zinc-800' : 'bg-transparent'
-        }`}
-      >
-        {icon}
-        <Text className="text-sm text-zinc-700 dark:text-zinc-200">{label}</Text>
-      </Pressable>
-    )
-  }
+  const bg = isDark ? '#0c0a09' : '#fafaf9'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const titleColor = isDark ? '#fafaf9' : '#1c1917'
 
   return (
-    <View className="border-b border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-      <View className="mb-2 flex-row items-center justify-between">
-        <View className="flex-row gap-2">
-          <Item icon={<LayoutDashboard size={16} color="#71717a" />} label="Dashboard" path="/" />
-          <Item icon={<Receipt size={16} color="#71717a" />} label="Transactions" path="/expenses" />
+    <View
+      style={{
+        paddingTop: insets.top,
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: border,
+        backgroundColor: bg,
+      }}
+    >
+      <Text style={{ fontSize: 17, fontWeight: '600', color: titleColor, letterSpacing: -0.4 }}>
+        Household Budget
+      </Text>
+      {showMonthSelector ? (
+        <View style={{ marginTop: 10 }}>
+          <MonthSelector />
         </View>
-        <Item icon={<SettingsIcon size={16} color="#71717a" />} label="Settings" path="/settings" />
+      ) : null}
+    </View>
+  )
+}
+
+function RootLayoutInner() {
+  const { isDark } = useThemeContext()
+  const bg = isDark ? '#0c0a09' : '#fafaf9'
+
+  return (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      <Header />
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }} />
       </View>
-      {showMonthSelector ? <MonthSelector /> : null}
     </View>
   )
 }
@@ -56,13 +61,12 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <ThemeProvider>
-      <MonthProvider>
-        <SafeAreaView className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-          <Header />
-          <Stack screenOptions={{ headerShown: false }} />
-        </SafeAreaView>
-      </MonthProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <MonthProvider>
+          <RootLayoutInner />
+        </MonthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   )
 }

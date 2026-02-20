@@ -7,30 +7,59 @@ import {
   prevMonthKey,
   useMonth,
 } from '../contexts/MonthContext'
+import { useThemeContext } from '../contexts/ThemeContext'
 
 export function MonthSelector() {
   const { selectedMonth, setSelectedMonth } = useMonth()
+  const { isDark } = useThemeContext()
   const isCurrentMonth = selectedMonth === currentMonthKey()
   const canGoNext = selectedMonth < currentMonthKey()
 
+  const bg = isDark ? '#292524' : '#fff'
+  const border = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'
+  const textColor = isDark ? '#fafaf9' : '#1c1917'
+  const iconColor = isDark ? '#a8a29e' : '#57534e'
+
   return (
-    <View className="flex-row items-center justify-center gap-3">
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
       <Pressable
         onPress={() => setSelectedMonth((m) => prevMonthKey(m))}
-        className="rounded-xl border border-zinc-300 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900"
+        style={{
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: bg,
+          padding: 10,
+        }}
       >
-        <ChevronLeft size={18} color="#71717a" />
+        <ChevronLeft size={18} color={iconColor} />
       </Pressable>
-      <Text className="min-w-[180px] text-center text-sm font-medium text-zinc-800 dark:text-zinc-100">
+      <Text
+        selectable
+        style={{
+          minWidth: 160,
+          textAlign: 'center',
+          fontSize: 14,
+          fontWeight: '500',
+          color: textColor,
+        }}
+      >
         {formatMonthLabel(selectedMonth)}
         {isCurrentMonth ? ' (current)' : ''}
       </Text>
       <Pressable
         onPress={() => canGoNext && setSelectedMonth((m) => nextMonthKey(m))}
         disabled={!canGoNext}
-        className="rounded-xl border border-zinc-300 bg-white p-2 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900"
+        style={{
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: bg,
+          padding: 10,
+          opacity: canGoNext ? 1 : 0.4,
+        }}
       >
-        <ChevronRight size={18} color="#71717a" />
+        <ChevronRight size={18} color={iconColor} />
       </Pressable>
     </View>
   )
