@@ -11,13 +11,21 @@ import {
   SpendingByCategoryPieChart,
   TotalByMonthChart,
 } from '../../components/ChartPanel'
+import { OnboardingScreen } from '../../components/OnboardingScreen'
 
 export default function Dashboard() {
   const { categories } = useBudget()
-  const { expenses } = useAllExpenses()
+  const { expenses, loading } = useAllExpenses()
   const { selectedMonth } = useMonth()
   const { isDark } = useThemeContext()
   const [categoryTab, setCategoryTab] = useState<'income' | 'expenses'>('expenses')
+
+  const aggregates = useMonthlyTotals(expenses)
+  const { byCategory, total, income } = useMonthlyTotalsForMonth(expenses, selectedMonth)
+
+  if (!loading && expenses.length === 0) {
+    return <OnboardingScreen />
+  }
 
   const cardShadow = isDark ? { boxShadow: '0 1px 3px rgba(0,0,0,0.4)' } : { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
   const bg = isDark ? '#1c1917' : '#fff'
@@ -28,8 +36,6 @@ export default function Dashboard() {
   const segmentActiveBg = isDark ? '#44403c' : '#e7e5e4'
   const barBg = isDark ? '#292524' : '#e7e5e4'
 
-  const aggregates = useMonthlyTotals(expenses)
-  const { byCategory, total, income } = useMonthlyTotalsForMonth(expenses, selectedMonth)
   const prevMonthKey =
     selectedMonth &&
     (() => {
