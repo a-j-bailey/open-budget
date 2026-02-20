@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useState } from 'react'
 import { ArrowDownCircle, ArrowUpCircle, TrendingDown, TrendingUp } from 'lucide-react-native'
 import { useBudget } from '../../hooks/useBudget'
@@ -168,47 +168,49 @@ export default function Dashboard() {
           ...cardShadow,
         }}
       >
-        <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor, marginBottom: 10 }}>
-          By category
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-          <View
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
-              backgroundColor: categoryTab === 'income' ? segmentActiveBg : 'transparent',
-            }}
-          >
-            <Text
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor }}>
+            By category
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Pressable
               onPress={() => setCategoryTab('income')}
               style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: categoryTab === 'income' ? titleColor : mutedColor,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: categoryTab === 'income' ? segmentActiveBg : 'transparent',
               }}
             >
-              Income
-            </Text>
-          </View>
-          <View
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
-              backgroundColor: categoryTab === 'expenses' ? segmentActiveBg : 'transparent',
-            }}
-          >
-            <Text
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '500',
+                  color: categoryTab === 'income' ? titleColor : mutedColor,
+                }}
+              >
+                Income
+              </Text>
+            </Pressable>
+            <Pressable
               onPress={() => setCategoryTab('expenses')}
               style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: categoryTab === 'expenses' ? titleColor : mutedColor,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: categoryTab === 'expenses' ? segmentActiveBg : 'transparent',
               }}
             >
-              Expenses
-            </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '500',
+                  color: categoryTab === 'expenses' ? titleColor : mutedColor,
+                }}
+              >
+                Expenses
+              </Text>
+            </Pressable>
           </View>
         </View>
         {visible.length === 0 ? (
