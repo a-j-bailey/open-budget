@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 import {
   currentMonthKey,
@@ -10,6 +11,7 @@ import {
 import { useThemeContext } from '../contexts/ThemeContext'
 
 export function MonthSelector() {
+  const insets = useSafeAreaInsets()
   const { selectedMonth, setSelectedMonth } = useMonth()
   const { isDark } = useThemeContext()
   const isCurrentMonth = selectedMonth === currentMonthKey()
@@ -21,45 +23,53 @@ export function MonthSelector() {
   const iconColor = isDark ? '#a8a29e' : '#57534e'
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginRight: 12,
+      }}
+    >
       <Pressable
         onPress={() => setSelectedMonth((m) => prevMonthKey(m))}
         style={{
-          borderRadius: 12,
+          borderRadius: 8,
           borderWidth: 1,
           borderColor: border,
           backgroundColor: bg,
-          padding: 10,
+          padding: 6,
         }}
       >
-        <ChevronLeft size={18} color={iconColor} />
+        <ChevronLeft size={16} color={iconColor} />
       </Pressable>
       <Text
         selectable
         style={{
-          minWidth: 160,
+          minWidth: 100,
           textAlign: 'center',
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: '500',
           color: textColor,
         }}
       >
         {formatMonthLabel(selectedMonth)}
-        {isCurrentMonth ? ' (current)' : ''}
+        {isCurrentMonth ? ' ·' : ''}
       </Text>
       <Pressable
         onPress={() => canGoNext && setSelectedMonth((m) => nextMonthKey(m))}
         disabled={!canGoNext}
         style={{
-          borderRadius: 12,
+          borderRadius: 8,
           borderWidth: 1,
           borderColor: border,
           backgroundColor: bg,
-          padding: 10,
+          padding: 6,
           opacity: canGoNext ? 1 : 0.4,
         }}
       >
-        <ChevronRight size={18} color={iconColor} />
+        <ChevronRight size={16} color={iconColor} />
       </Pressable>
     </View>
   )

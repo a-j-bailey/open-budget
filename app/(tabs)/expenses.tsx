@@ -17,12 +17,14 @@ import { DatePicker, Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui'
 import { datePickerStyle, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
 import { Check, Receipt } from 'lucide-react-native'
 import { NativeButton, NativeTextField, NativeToggle } from '../../components/swift-ui'
+import { MonthSelector } from '../../components/MonthSelector'
 import type { ExpenseRow } from '../../types'
 import { useMonth } from '../../contexts/MonthContext'
 import { useExpenses } from '../../hooks/useExpenses'
 import { useBudget } from '../../hooks/useBudget'
 import { useRules, applyRules } from '../../hooks/useRules'
 import { useThemeContext } from '../../contexts/ThemeContext'
+import { Tabs } from 'expo-router'
 
 const GROUP_RADIUS = 12
 const ROW_MIN_HEIGHT = 44
@@ -220,7 +222,7 @@ export default function ExpensesScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, padding: 14, justifyContent: 'center' }}>
+      <View style={{ flex: 1, paddingTop: insets.top + 14, paddingHorizontal: 14, justifyContent: 'center' }}>
         <Text style={{ fontSize: 28, fontWeight: '700', color: label, letterSpacing: -0.6 }}>Transactions</Text>
         <Text style={{ marginTop: 10, fontSize: 16, color: muted }}>Loading…</Text>
       </View>
@@ -229,24 +231,15 @@ export default function ExpensesScreen() {
 
   return (
     <>
+      <Tabs.Screen options={{ headerRight: () => <MonthSelector /> }} />
       <ScrollView
         style={{ flex: 1 }}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20 }}
+        contentContainerStyle={{
+          padding: 12,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: '700',
-            color: label,
-            letterSpacing: -0.6,
-            marginBottom: 14,
-          }}
-        >
-          Transactions
-        </Text>
-
         {/* Action bar: primary and secondary buttons */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <Pressable

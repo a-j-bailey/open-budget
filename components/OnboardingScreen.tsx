@@ -1,9 +1,11 @@
 import { ScrollView, Text, View, Pressable } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
 import { FileSpreadsheet, Settings, Sparkles } from 'lucide-react-native'
 import { useThemeContext } from '../contexts/ThemeContext'
 
 export function OnboardingScreen() {
+  const insets = useSafeAreaInsets()
   const { isDark } = useThemeContext()
 
   const bg = isDark ? '#0c0a09' : '#fafaf9'
@@ -22,7 +24,6 @@ export function OnboardingScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
         paddingHorizontal: 20,
-        paddingTop: 24,
         paddingBottom: 32,
         gap: 24,
       }}
@@ -66,7 +67,7 @@ export function OnboardingScreen() {
             maxWidth: 320,
           }}
         >
-          Your budget, your data, open source and free. No bank sync, no subscription. Let’s get you set up.
+          Your budget, your data, open source and free. No bank sync, no subscription.
         </Text>
       </View>
 
