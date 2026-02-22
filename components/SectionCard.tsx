@@ -9,10 +9,12 @@ export type SectionCardProps = {
   headerRight?: React.ReactNode
   children?: React.ReactNode
   isDark: boolean
+  /** When true, use plain View instead of GlassView so child touchables (e.g. NavRow) work. */
+  preferPlain?: boolean
 }
 
-export function SectionCard({ title, headerRight, children, isDark }: SectionCardProps) {
-  const useGlass = isGlassEffectAPIAvailable()
+export function SectionCard({ title, headerRight, children, isDark, preferPlain }: SectionCardProps) {
+  const useGlass = isGlassEffectAPIAvailable() && !preferPlain
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
   const bg = isDark ? '#1c1917' : '#ffffff'
   const titleColor = isDark ? '#a8a29e' : '#78716c'
@@ -62,8 +64,11 @@ export function SectionCard({ title, headerRight, children, isDark }: SectionCar
         style={containerStyle}
         colorScheme={isDark ? 'dark' : 'light'}
         glassEffectStyle="regular"
+        isInteractive={false}
       >
-        {content}
+        <View pointerEvents="box-none" collapsable={false}>
+          {content}
+        </View>
       </GlassView>
     )
   }

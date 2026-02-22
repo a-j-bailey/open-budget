@@ -23,6 +23,10 @@ React Native (Expo) app for managing a household budget across iPhone, iPad, and
 - **Sync** — local SQLite first, optional iCloud push/pull.
 - **Migration** — one-time import from old `config.json`, `rules.json`, and monthly `*.csv` files.
 
+## Feedback
+
+Submit feedback and feature requests at [OpenBudget on UserJot](https://openbudget.userjot.com/?cursor=1&order=top&limit=10).
+
 ## Scripts
 
 | Script | Command | Description |

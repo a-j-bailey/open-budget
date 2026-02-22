@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native'
+import { Linking, Pressable, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
 import { Sun, Moon, Smartphone } from 'lucide-react-native'
 import { useThemeContext } from '../../../contexts/ThemeContext'
 import type { Theme } from '../../../hooks/useTheme'
@@ -29,30 +29,50 @@ function formatSyncTime(iso: string | undefined) {
   }
 }
 
+const navRowStyle = {
+  flexDirection: 'row' as const,
+  alignItems: 'center' as const,
+  justifyContent: 'space-between' as const,
+  paddingVertical: 10,
+  paddingHorizontal: 0,
+}
+
 function NavRow({
   label,
+  href,
   onPress,
   isDark,
 }: {
   label: string
-  onPress: () => void
+  href?: string
+  onPress?: () => void
   isDark: boolean
 }) {
   const labelColor = isDark ? '#fafaf9' : '#1c1917'
   const muted = isDark ? '#a8a29e' : '#78716c'
+  if (href != null) {
+    return (
+      <Link href={href as './rules' | './budget' | './privacy' | './dev-menu'} style={{ paddingVertical: 10 }}>
+        <View style={navRowStyle}>
+          <Text style={{ fontSize: 16, fontWeight: '500', color: labelColor }}>{label}</Text>
+          <Text style={{ fontSize: 15, color: muted }}>→</Text>
+        </View>
+      </Link>
+    )
+  }
+  const content = (
+    <>
+      <Text style={{ fontSize: 16, fontWeight: '500', color: labelColor }}>{label}</Text>
+      <Text style={{ fontSize: 15, color: muted }}>→</Text>
+    </>
+  )
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 10,
-        paddingHorizontal: 0,
-      }}
+      hitSlop={10}
+      style={navRowStyle}
     >
-      <Text style={{ fontSize: 16, fontWeight: '500', color: labelColor }}>{label}</Text>
-      <Text style={{ fontSize: 15, color: muted }}>→</Text>
+      {content}
     </Pressable>
   )
 }
@@ -141,6 +161,7 @@ export default function SettingsScreen() {
     <ScrollView
       style={{ flex: 1, backgroundColor: isDark ? '#0c0a09' : '#fafaf9' }}
       contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="always"
       contentContainerStyle={{
         padding: 12,
         gap: 14,
@@ -170,38 +191,39 @@ export default function SettingsScreen() {
                     iCloudAvailable === null
                       ? muted
                       : iCloudAvailable
-                        ? '#22c55e'
+                        ? syncEnabled
+                          ? '#22c55e'
+                          : '#eab308'
                         : '#ef4444',
                 }}
               />
               <Text style={{ fontSize: 12, color: muted }}>
                 {iCloudAvailable === null
                   ? 'Checking…'
-                  : iCloudAvailable
-                    ? 'Available'
-                    : 'Unavailable'}
+                  : !iCloudAvailable
+                    ? 'Unavailable'
+                    : syncEnabled
+                      ? 'Available'
+                      : 'Disabled'}
               </Text>
             </View>
-            <Switch
-              value={syncEnabled}
-              onValueChange={async (value) => {
-                await setICloudSyncEnabled(value)
-                setSyncEnabled(value)
-              }}
-              disabled={syncEnabledLoading}
-              trackColor={{ false: isDark ? '#44403c' : '#d6d3d1', true: isDark ? '#22c55e' : '#4ade80' }}
-              thumbColor={isDark ? '#fafaf9' : '#ffffff'}
-            />
+            {iCloudAvailable !== false && (
+              <Switch
+                value={syncEnabled}
+                onValueChange={async (value) => {
+                  await setICloudSyncEnabled(value)
+                  setSyncEnabled(value)
+                }}
+                disabled={syncEnabledLoading}
+                trackColor={{ false: isDark ? '#44403c' : '#d6d3d1', true: isDark ? '#22c55e' : '#4ade80' }}
+                thumbColor={isDark ? '#fafaf9' : '#ffffff'}
+              />
+            )}
           </View>
         }
       >
         <View style={{ gap: 12 }}>
-          {!syncEnabled && (
-            <Text style={{ fontSize: 14, color: muted }}>
-              Sync is off. Turn on to use Push/Pull in the Dev menu and to pull from iCloud on app launch.
-            </Text>
-          )}
-          {syncEnabled && iCloudAvailable === false && (
+          {iCloudAvailable === false && (
             <View
               style={{
                 paddingVertical: 10,
@@ -223,6 +245,11 @@ export default function SettingsScreen() {
               </Text>
             </View>
           )}
+          {iCloudAvailable !== false && !syncEnabled && (
+            <Text style={{ fontSize: 14, color: muted }}>
+              Sync is off. Turn on to use Push/Pull in the Dev menu and to pull from iCloud on app launch.
+            </Text>
+          )}
           {syncEnabled && (
             <Text style={{ fontSize: 14, color: muted }}>
               Last sync: {formatSyncTime(lastSyncTime)}
@@ -237,7 +264,7 @@ export default function SettingsScreen() {
       </SectionCard>
 
       <SectionCard title="About" isDark={isDark}>
-        <NavRow label="Privacy policy" onPress={() => router.push('/(tabs)/settings/privacy')} isDark={isDark} />
+        <NavRow label="Privacy policy" onPress={() => router.push('/settings/privacy')} isDark={isDark} />
       </SectionCard>
 
       <SectionCard title="Feedback" isDark={isDark}>

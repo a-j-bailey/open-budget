@@ -1,5 +1,7 @@
+import 'react-native-gesture-handler'
 import { Stack } from 'expo-router'
 import { View } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useEffect } from 'react'
 import { vexo } from 'vexo-analytics'
@@ -21,6 +23,7 @@ function RootLayoutInner() {
 
 export default function RootLayout() {
   useEffect(() => {
+    if (__DEV__) return
     const appId = process.env.EXPO_PUBLIC_VEXO_APP_ID
     if (appId) vexo(appId)
     initDb().then(async () => {
@@ -30,12 +33,14 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <MonthProvider>
-          <RootLayoutInner />
-        </MonthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <MonthProvider>
+            <RootLayoutInner />
+          </MonthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }
