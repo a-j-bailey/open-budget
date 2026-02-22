@@ -12,7 +12,8 @@ import {
   setICloudSyncEnabled,
   type LastSyncState,
 } from '../../../lib/cloudSync'
-import { SectionCard } from '../../../components/SectionCard'
+import { Card } from '../../../components/Card'
+import { hapticSelection } from '../../../lib/haptics'
 
 function formatSyncTime(iso: string | undefined) {
   if (!iso) return 'Never'
@@ -52,7 +53,11 @@ function NavRow({
   const muted = isDark ? '#a8a29e' : '#78716c'
   if (href != null) {
     return (
-      <Link href={href as './rules' | './budget' | './privacy' | './dev-menu'} style={{ paddingVertical: 10 }}>
+      <Link
+        href={href as './rules' | './budget' | './privacy' | './dev-menu'}
+        style={{ paddingVertical: 10 }}
+        onPress={hapticSelection}
+      >
         <View style={navRowStyle}>
           <Text style={{ fontSize: 16, fontWeight: '500', color: labelColor }}>{label}</Text>
           <Text style={{ fontSize: 15, color: muted }}>→</Text>
@@ -68,7 +73,10 @@ function NavRow({
   )
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        hapticSelection()
+        onPress?.()
+      }}
       hitSlop={10}
       style={navRowStyle}
     >
@@ -104,7 +112,10 @@ function AppearanceIconSelector({
         return (
           <Pressable
             key={v}
-            onPress={() => onChange(v)}
+            onPress={() => {
+              hapticSelection()
+              onChange(v)
+            }}
             style={{
               width: 36,
               height: 36,
@@ -168,7 +179,7 @@ export default function SettingsScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <SectionCard
+      <Card
         title="Appearance"
         isDark={isDark}
         headerRight={
@@ -176,7 +187,7 @@ export default function SettingsScreen() {
         }
       />
 
-      <SectionCard
+      <Card
         title="iCloud Sync"
         isDark={isDark}
         headerRight={
@@ -256,28 +267,22 @@ export default function SettingsScreen() {
             </Text>
           )}
         </View>
-      </SectionCard>
+      </Card>
 
-      <SectionCard title="Manage" isDark={isDark}>
+      <Card title="Manage" isDark={isDark}>
         <NavRow label="Rules" onPress={() => router.push('/settings/rules')} isDark={isDark} />
         <NavRow label="Budget" onPress={() => router.push('/settings/budget')} isDark={isDark} />
-      </SectionCard>
+      </Card>
 
-      <SectionCard title="About" isDark={isDark}>
-        <NavRow label="Privacy policy" onPress={() => router.push('/settings/privacy')} isDark={isDark} />
-      </SectionCard>
-
-      <SectionCard title="Feedback" isDark={isDark}>
+      <Card title="More" isDark={isDark}>
+        <NavRow label="Privacy Policy" onPress={() => router.push('/settings/privacy')} isDark={isDark} />
         <NavRow
-          label="Feedback & feature requests"
+          label="Feedback & Feature Requests"
           onPress={() => Linking.openURL('https://openbudget.userjot.com/?cursor=1&order=top&limit=10')}
           isDark={isDark}
         />
-      </SectionCard>
-
-      <SectionCard title="Advanced" isDark={isDark}>
-        <NavRow label="Dev menu" onPress={() => router.push('/settings/dev-menu')} isDark={isDark} />
-      </SectionCard>
+        <NavRow label="Dev Menu" onPress={() => router.push('/settings/dev-menu')} isDark={isDark} />
+      </Card>
     </ScrollView>
   )
 }

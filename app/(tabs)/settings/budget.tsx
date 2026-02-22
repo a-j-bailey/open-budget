@@ -3,49 +3,10 @@ import { ScrollView, Text, View } from 'react-native'
 import { NativeButton, NativeSegmentedPicker, NativeTextField } from '../../../components/swift-ui'
 import { useThemeContext } from '../../../contexts/ThemeContext'
 import { useBudget } from '../../../hooks/useBudget'
+import { Card } from '../../../components/Card'
 
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
-
-function SectionCard({
-  title,
-  children,
-  isDark,
-}: {
-  title: string
-  children: React.ReactNode
-  isDark: boolean
-}) {
-  const bg = isDark ? '#1c1917' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  return (
-    <View
-      style={{
-        backgroundColor: bg,
-        borderRadius: 14,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: border,
-        ...(isDark ? cardShadowDark : cardShadow),
-      }}
-    >
-      <View style={{ marginBottom: 10 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: isDark ? '#a8a29e' : '#78716c',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-          }}
-        >
-          {title}
-        </Text>
-      </View>
-      {children}
-    </View>
-  )
-}
 
 export default function BudgetScreen() {
   const { isDark } = useThemeContext()
@@ -94,7 +55,7 @@ export default function BudgetScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <SectionCard title="New category" isDark={isDark}>
+      <Card title="New category" isDark={isDark} preferPlain>
         <NativeSegmentedPicker
           value={viewMode}
           options={viewModeOptions}
@@ -148,7 +109,7 @@ export default function BudgetScreen() {
           fallbackBackgroundColor="#0ea5e9"
           fallbackTextColor="#ffffff"
         />
-      </SectionCard>
+      </Card>
 
       {visibleCategories.map((cat) => (
         <View

@@ -26,6 +26,7 @@ import { useBudget } from '../../hooks/useBudget'
 import { useRules, applyRules } from '../../hooks/useRules'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import { syncFromCloudIfAvailable } from '../../lib/cloudSync'
+import { hapticImpact, hapticSelection } from '../../lib/haptics'
 import { Tabs } from 'expo-router'
 
 const GROUP_RADIUS = 12
@@ -260,7 +261,10 @@ export default function ExpensesScreen() {
         {/* Action bar: primary and secondary buttons */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <Pressable
-            onPress={runImport}
+            onPress={() => {
+              hapticImpact()
+              runImport()
+            }}
             style={{
               paddingVertical: 10,
               paddingHorizontal: 14,
@@ -273,7 +277,10 @@ export default function ExpensesScreen() {
             <Text style={{ fontSize: 15, fontWeight: '600', color: label }}>Import CSV</Text>
           </Pressable>
           <Pressable
-            onPress={() => setShowAddForm((v) => !v)}
+            onPress={() => {
+              hapticSelection()
+              setShowAddForm((v) => !v)
+            }}
             style={{
               paddingVertical: 10,
               paddingHorizontal: 14,
@@ -284,7 +291,10 @@ export default function ExpensesScreen() {
             <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>{showAddForm ? 'Cancel' : 'Add'}</Text>
           </Pressable>
           <Pressable
-            onPress={reapplyRules}
+            onPress={() => {
+              hapticImpact()
+              reapplyRules()
+            }}
             style={{
               paddingVertical: 10,
               paddingHorizontal: 14,
@@ -390,7 +400,10 @@ export default function ExpensesScreen() {
               />
             </View>
             <Pressable
-              onPress={handleAddExpense}
+              onPress={() => {
+                hapticImpact()
+                handleAddExpense()
+              }}
               style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Save</Text>
@@ -445,7 +458,10 @@ export default function ExpensesScreen() {
               Import a CSV or add your first transaction to get started.
             </Text>
             <Pressable
-              onPress={() => setShowAddForm(true)}
+              onPress={() => {
+                hapticImpact()
+                setShowAddForm(true)
+              }}
               style={{ backgroundColor: '#10b981', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 }}
             >
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Add transaction</Text>
@@ -462,7 +478,10 @@ export default function ExpensesScreen() {
                 <View key={`${row.transactionDate}-${row.description}-${row.debit}-${row.credit}`}>
                   {i > 0 ? <View style={{ height: 1, backgroundColor: border }} /> : null}
                   <Pressable
-                    onPress={() => openEditSheet(row)}
+                    onPress={() => {
+                      hapticSelection()
+                      openEditSheet(row)
+                    }}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -715,7 +734,10 @@ export default function ExpensesScreen() {
                   return (
                     <Pressable
                       key={cat.id}
-                      onPress={() => setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))}
+                      onPress={() => {
+                        hapticSelection()
+                        setEditForm((f) => ({ ...f, budgetCategoryId: cat.id }))
+                      }}
                       style={({ pressed }) => ({
                         flexDirection: 'row',
                         alignItems: 'center',

@@ -14,6 +14,7 @@ export default function SettingsLayout() {
         headerStyle: { backgroundColor: screenBg },
         headerTitleStyle: { color: headerTint, fontWeight: '700' },
         headerTintColor: headerTint,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen
@@ -24,31 +25,19 @@ export default function SettingsLayout() {
       />
       <Stack.Screen
         name="rules"
-        options={{
-          title: 'Rules',
-          headerBackTitle: 'Settings',
-        }}
+        options={{ title: 'Rules' }}
       />
       <Stack.Screen
         name="budget"
-        options={{
-          title: 'Budget',
-          headerBackTitle: 'Settings',
-        }}
+        options={{ title: 'Budget' }}
       />
       <Stack.Screen
         name="privacy"
-        options={{
-          title: 'Privacy',
-          headerBackTitle: 'Settings',
-        }}
+        options={{ title: 'Privacy' }}
       />
       <Stack.Screen
         name="dev-menu"
-        options={{
-          title: 'Dev menu',
-          headerBackTitle: 'Settings',
-        }}
+        options={{ title: 'Dev menu' }}
       />
     </Stack>
   )

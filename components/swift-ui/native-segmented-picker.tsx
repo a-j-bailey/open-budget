@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
 import { Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui'
 import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
+import { hapticSelection } from '../../lib/haptics'
 
 type SegmentedOption<T extends string | number> = {
   label: string
@@ -36,7 +37,10 @@ export function NativeSegmentedPicker<T extends string | number>({
       <Host matchContents style={containerStyle}>
         <Picker<T>
           selection={value}
-          onSelectionChange={(next) => onChange(next)}
+          onSelectionChange={(next) => {
+            hapticSelection()
+            onChange(next)
+          }}
           modifiers={[pickerStyle('segmented')]}
         >
           {options.map((option) => (
@@ -66,7 +70,10 @@ export function NativeSegmentedPicker<T extends string | number>({
         return (
           <Pressable
             key={String(option.value)}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              hapticSelection()
+              onChange(option.value)
+            }}
             style={{
               flex: 1,
               paddingVertical: 8,

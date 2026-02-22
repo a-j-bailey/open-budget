@@ -12,52 +12,8 @@ import {
   syncFromCloudIfAvailable,
   type LastSyncState,
 } from '../../../lib/cloudSync'
-
-const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
-const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
-
-function SectionCard({
-  title,
-  headerRight,
-  children,
-  isDark,
-}: {
-  title: string
-  headerRight?: React.ReactNode
-  children: React.ReactNode
-  isDark: boolean
-}) {
-  const bg = isDark ? '#1c1917' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  return (
-    <View
-      style={{
-        backgroundColor: bg,
-        borderRadius: 14,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: border,
-        ...(isDark ? cardShadowDark : cardShadow),
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: isDark ? '#a8a29e' : '#78716c',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-          }}
-        >
-          {title}
-        </Text>
-        {headerRight}
-      </View>
-      {children}
-    </View>
-  )
-}
+import { Card } from '../../../components/Card'
+import { hapticSelection } from '../../../lib/haptics'
 
 function formatSyncTime(iso: string | undefined) {
   if (!iso) return 'Never'
@@ -173,9 +129,30 @@ export default function DevMenuScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <SectionCard
+      <View
+        style={{
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          borderRadius: 8,
+          backgroundColor: isDark ? 'rgba(120,113,108,0.2)' : 'rgba(120,113,108,0.12)',
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(168,162,158,0.3)' : 'rgba(120,113,108,0.2)',
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            color: isDark ? '#a8a29e' : '#78716c',
+            lineHeight: 20,
+          }}
+        >
+          This menu is intended for advanced users. Use with care.
+        </Text>
+      </View>
+      <Card
         title="iCloud Sync"
         isDark={isDark}
+        preferPlain
         headerRight={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View
@@ -294,11 +271,14 @@ export default function DevMenuScreen() {
             </>
           )}
         </View>
-      </SectionCard>
+      </Card>
 
-      <SectionCard title="Data" isDark={isDark}>
+      <Card title="Data" isDark={isDark} preferPlain>
         <Pressable
-          onPress={() => router.push('/migrate')}
+          onPress={() => {
+            hapticSelection()
+            router.push('/migrate')
+          }}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -313,7 +293,7 @@ export default function DevMenuScreen() {
         <Text style={{ fontSize: 13, color: muted, marginTop: 2 }}>
           Import config, rules, and expense CSVs from the old desktop app.
         </Text>
-      </SectionCard>
+      </Card>
     </ScrollView>
   )
 }

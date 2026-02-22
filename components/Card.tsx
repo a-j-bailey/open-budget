@@ -4,7 +4,7 @@ import { GlassView, isGlassEffectAPIAvailable } from 'expo-glass-effect'
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
 
-export type SectionCardProps = {
+export type CardProps = {
   title: string
   headerRight?: React.ReactNode
   children?: React.ReactNode
@@ -13,7 +13,7 @@ export type SectionCardProps = {
   preferPlain?: boolean
 }
 
-export function SectionCard({ title, headerRight, children, isDark, preferPlain }: SectionCardProps) {
+export function Card({ title, headerRight, children, isDark, preferPlain }: CardProps) {
   const useGlass = isGlassEffectAPIAvailable() && !preferPlain
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
   const bg = isDark ? '#1c1917' : '#ffffff'

@@ -9,7 +9,7 @@ import { useMonthlyTotals, useMonthlyTotalsForMonth } from '../../hooks/useMonth
 import { useMonth } from '../../contexts/MonthContext'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import { MonthSelector } from '../../components/MonthSelector'
-import { SectionCard } from '../../components/SectionCard'
+import { Card } from '../../components/Card'
 import {
   SpendingByCategoryLineChart,
   SpendingByCategoryPieChart,
@@ -17,6 +17,7 @@ import {
 } from '../../components/ChartPanel'
 import { OnboardingScreen } from '../../components/OnboardingScreen'
 import { syncFromCloudIfAvailable } from '../../lib/cloudSync'
+import { hapticSelection } from '../../lib/haptics'
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets()
@@ -111,7 +112,7 @@ export default function Dashboard() {
         }
       >
         {/* Month summary hero card */}
-        <SectionCard title={selectedMonth ?? ''} isDark={isDark}>
+        <Card title={selectedMonth ?? ''} isDark={isDark}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <ArrowDownCircle size={20} color="#16a34a" />
             <Text style={{ fontSize: 15, color: bodyColor, flex: 1 }}>Income</Text>
@@ -146,16 +147,19 @@ export default function Dashboard() {
               {(net >= 0 ? '+' : '')}${net.toFixed(2)}
             </Text>
           </View>
-        </SectionCard>
+        </Card>
 
         {/* By category */}
-        <SectionCard
+        <Card
           title="By category"
           isDark={isDark}
           headerRight={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Pressable
-                onPress={() => setCategoryTab('income')}
+                onPress={() => {
+                  hapticSelection()
+                  setCategoryTab('income')
+                }}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -174,7 +178,10 @@ export default function Dashboard() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => setCategoryTab('expenses')}
+                onPress={() => {
+                  hapticSelection()
+                  setCategoryTab('expenses')
+                }}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -244,10 +251,9 @@ export default function Dashboard() {
               )
             })
           )}
-        </SectionCard>
+        </Card>
 
         <View style={{ gap: 14 }}>
-          <Link href="./settings" >Settings</Link>
           <SpendingByCategoryPieChart
             data={chartDataByCategory}
             categories={categories}

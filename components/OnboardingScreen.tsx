@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'
 import { FileSpreadsheet, Settings, Sparkles } from 'lucide-react-native'
 import { useThemeContext } from '../contexts/ThemeContext'
+import { hapticImpact } from '../lib/haptics'
 
 export function OnboardingScreen() {
   const insets = useSafeAreaInsets()
@@ -109,6 +110,7 @@ export function OnboardingScreen() {
       {/* Step 1: Import transactions */}
       <Link href="/(tabs)/expenses" asChild>
         <Pressable
+          onPress={hapticImpact}
           style={({ pressed }) => ({
             backgroundColor: cardBg,
             borderRadius: 16,
@@ -163,6 +165,7 @@ export function OnboardingScreen() {
       {/* Step 2: Set up budget & rules */}
       <Link href="/(tabs)/settings" asChild>
         <Pressable
+          onPress={hapticImpact}
           style={({ pressed }) => ({
           backgroundColor: cardBg,
           borderRadius: 16,

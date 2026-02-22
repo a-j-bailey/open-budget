@@ -2,6 +2,7 @@ import { Asset } from 'expo-asset'
 import { File } from 'expo-file-system'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native'
+import { hapticSelection } from '../../../lib/haptics'
 import { useThemeContext } from '../../../contexts/ThemeContext'
 
 const PRIVACY_MD = require('../../../PRIVACY.md') as number
@@ -141,7 +142,10 @@ function RenderBlock({
               return (
                 <Pressable
                   key={idx}
-                  onPress={() => Linking.openURL(seg.link!)}
+                  onPress={() => {
+                    hapticSelection()
+                    Linking.openURL(seg.link!)
+                  }}
                   style={{ marginRight: 2 }}
                 >
                   <Text

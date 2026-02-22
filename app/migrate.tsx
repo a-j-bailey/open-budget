@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { ChevronLeft } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useThemeContext } from '../contexts/ThemeContext'
+import { hapticSelection } from '../lib/haptics'
 import { runMigrationFromFiles } from '../lib/migration'
 
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
@@ -58,7 +59,10 @@ export default function MigrateScreen() {
         }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => {
+            hapticSelection()
+            router.back()
+          }}
           hitSlop={12}
           style={{
             width: 40,

@@ -9,6 +9,7 @@ import {
   useMonth,
 } from '../contexts/MonthContext'
 import { useThemeContext } from '../contexts/ThemeContext'
+import { hapticSelection } from '../lib/haptics'
 
 export function MonthSelector() {
   const insets = useSafeAreaInsets()
@@ -33,7 +34,10 @@ export function MonthSelector() {
       }}
     >
       <Pressable
-        onPress={() => setSelectedMonth((m) => prevMonthKey(m))}
+        onPress={() => {
+          hapticSelection()
+          setSelectedMonth((m) => prevMonthKey(m))
+        }}
         style={{
           borderRadius: 8,
           borderWidth: 1,
@@ -58,7 +62,10 @@ export function MonthSelector() {
         {isCurrentMonth ? ' ·' : ''}
       </Text>
       <Pressable
-        onPress={() => canGoNext && setSelectedMonth((m) => nextMonthKey(m))}
+        onPress={() => {
+          hapticSelection()
+          canGoNext && setSelectedMonth((m) => nextMonthKey(m))
+        }}
         disabled={!canGoNext}
         style={{
           borderRadius: 8,

@@ -4,49 +4,11 @@ import { NativeButton, NativeSegmentedPicker, NativeTextField } from '../../../c
 import { useThemeContext } from '../../../contexts/ThemeContext'
 import { useRules } from '../../../hooks/useRules'
 import { useBudget } from '../../../hooks/useBudget'
+import { Card } from '../../../components/Card'
+import { hapticSelection } from '../../../lib/haptics'
 
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
-
-function SectionCard({
-  title,
-  children,
-  isDark,
-}: {
-  title: string
-  children: React.ReactNode
-  isDark: boolean
-}) {
-  const bg = isDark ? '#1c1917' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  return (
-    <View
-      style={{
-        backgroundColor: bg,
-        borderRadius: 14,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: border,
-        ...(isDark ? cardShadowDark : cardShadow),
-      }}
-    >
-      <View style={{ marginBottom: 10 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: isDark ? '#a8a29e' : '#78716c',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-          }}
-        >
-          {title}
-        </Text>
-      </View>
-      {children}
-    </View>
-  )
-}
 
 export default function RulesScreen() {
   const { isDark } = useThemeContext()
@@ -84,7 +46,7 @@ export default function RulesScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <SectionCard title="Add rule" isDark={isDark}>
+      <Card title="Add rule" isDark={isDark} preferPlain>
         <NativeTextField
           value={pattern}
           onChangeText={setPattern}
@@ -112,7 +74,10 @@ export default function RulesScreen() {
           ).map(({ key, label: l }) => (
             <Pressable
               key={key}
-              onPress={() => setSource(key)}
+              onPress={() => {
+                hapticSelection()
+                setSource(key)
+              }}
               style={{
                 paddingHorizontal: 12,
                 paddingVertical: 8,
@@ -124,7 +89,10 @@ export default function RulesScreen() {
             </Pressable>
           ))}
           <Pressable
-            onPress={() => setTargetCategoryId('ignore')}
+            onPress={() => {
+              hapticSelection()
+              setTargetCategoryId('ignore')
+            }}
             style={{
               paddingHorizontal: 12,
               paddingVertical: 8,
@@ -142,7 +110,10 @@ export default function RulesScreen() {
             {categories.map((cat) => (
               <Pressable
                 key={cat.id}
-                onPress={() => setTargetCategoryId(cat.id)}
+                onPress={() => {
+                  hapticSelection()
+                  setTargetCategoryId(cat.id)
+                }}
                 style={{
                   paddingHorizontal: 12,
                   paddingVertical: 6,
@@ -163,7 +134,7 @@ export default function RulesScreen() {
           fallbackBackgroundColor="#0ea5e9"
           fallbackTextColor="#ffffff"
         />
-      </SectionCard>
+      </Card>
 
       {rules.map((rule) => (
         <View

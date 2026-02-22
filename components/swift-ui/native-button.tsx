@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native'
 import type { ViewStyle } from 'react-native'
 import { Button as SwiftButton, Host } from '@expo/ui/swift-ui'
 import { buttonStyle as swiftButtonStyle, disabled as swiftDisabled } from '@expo/ui/swift-ui/modifiers'
+import { hapticImpact, hapticImpactLight } from '../../lib/haptics'
 
 type NativeButtonRole = 'default' | 'cancel' | 'destructive'
 
@@ -30,13 +31,18 @@ export function NativeButton({
   fallbackTextColor = '#0a84ff',
   fallbackAlign = 'center',
 }: NativeButtonProps) {
+  const handlePress = () => {
+    if (role === 'cancel') hapticImpactLight()
+    else hapticImpact()
+    onPress?.()
+  }
   if (isIOS) {
     return (
       <Host matchContents style={containerStyle}>
         <SwiftButton
           label={label}
           role={role}
-          onPress={onPress}
+          onPress={handlePress}
           modifiers={[
             ...(iosButtonStyle ? [swiftButtonStyle(iosButtonStyle)] : []),
             ...(disabled ? [swiftDisabled(true)] : []),
@@ -49,7 +55,7 @@ export function NativeButton({
   return (
     <View style={containerStyle}>
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled}
         style={({ pressed }) => ({
           minHeight: 36,
