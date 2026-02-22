@@ -126,7 +126,7 @@ export function useExpenses(selectedMonthKey: string) {
 
   const setAllExpenses = useCallback(
     (rows: ExpenseRow[]) => {
-      save(rows)
+      return save(rows)
     },
     [save]
   )
@@ -134,7 +134,7 @@ export function useExpenses(selectedMonthKey: string) {
   const deleteRow = useCallback(
     (index: number) => {
       const next = expenses.filter((_, i) => i !== index)
-      save(next)
+      return save(next)
     },
     [expenses, save]
   )
@@ -185,7 +185,7 @@ export function useExpenses(selectedMonthKey: string) {
       const merged = [...expenses, withRules].sort((a, b) =>
         (b.transactionDate || '').localeCompare(a.transactionDate || '')
       )
-      save(merged)
+      return save(merged)
     },
     [expenses, save]
   )

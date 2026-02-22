@@ -93,47 +93,55 @@ export default function TransactionScreen() {
   const muted = isDark ? '#a8a29e' : '#78716c'
   const segmentBg = isDark ? '#292524' : '#e7e5e4'
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.description.trim() || !form.amount.trim()) return
     hapticImpact()
-    if (isEdit && editIndex != null) {
-      const next = expenses.map((row, i) => {
-        if (i !== editIndex) return row
-        return {
-          ...row,
-          transactionDate: form.transactionDate.trim(),
-          description: form.description.trim(),
-          debit: form.isIncome ? '0' : form.amount.trim().replace(/[,$]/g, ''),
-          credit: form.isIncome ? form.amount.trim().replace(/[,$]/g, '') : '0',
-          budgetCategoryId: form.budgetCategoryId === '' ? null : form.budgetCategoryId,
-          ignored: form.ignored,
-        }
-      })
-      setAllExpenses(next)
-    } else {
-      addExpense(
-        {
-          transactionDate: form.transactionDate,
-          description: form.description.trim(),
-          debit: form.isIncome ? '0' : form.amount.trim(),
-          credit: form.isIncome ? form.amount.trim() : '0',
-          budgetCategoryId: form.budgetCategoryId === '' ? null : form.budgetCategoryId,
-          ignored: form.ignored,
-        },
-        rules
-      )
+    try {
+      if (isEdit && editIndex != null) {
+        const next = expenses.map((row, i) => {
+          if (i !== editIndex) return row
+          return {
+            ...row,
+            transactionDate: form.transactionDate.trim(),
+            description: form.description.trim(),
+            debit: form.isIncome ? '0' : form.amount.trim().replace(/[,$]/g, ''),
+            credit: form.isIncome ? form.amount.trim().replace(/[,$]/g, '') : '0',
+            budgetCategoryId: form.budgetCategoryId === '' ? null : form.budgetCategoryId,
+            ignored: form.ignored,
+          }
+        })
+        await setAllExpenses(next)
+      } else {
+        await addExpense(
+          {
+            transactionDate: form.transactionDate,
+            description: form.description.trim(),
+            debit: form.isIncome ? '0' : form.amount.trim(),
+            credit: form.isIncome ? form.amount.trim() : '0',
+            budgetCategoryId: form.budgetCategoryId === '' ? null : form.budgetCategoryId,
+            ignored: form.ignored,
+          },
+          rules
+        )
+      }
+      router.back()
+    } catch {
+      // Error already set by useExpenses
     }
-    router.back()
   }
 
   const handleDelete = () => {
     if (!isEdit || editIndex == null) return
     Alert.alert('Delete transaction', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => {
-        deleteRow(editIndex)
-        router.back()
-      } },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteRow(editIndex)
+          router.back()
+        },
+      },
     ])
   }
 
