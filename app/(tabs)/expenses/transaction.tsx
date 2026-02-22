@@ -142,7 +142,7 @@ export default function TransactionScreen() {
       style={{ flex: 1, backgroundColor: isDark ? '#0c0a09' : '#f2f2f7' }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        paddingTop: Math.max(insets.top, 20) + 12,
+        paddingTop: 32,
         paddingHorizontal: INSET_H,
         paddingBottom: Math.max(insets.bottom, 24) + 24,
         gap: SECTION_GAP,
