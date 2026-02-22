@@ -37,6 +37,7 @@ export type PullResult = {
 }
 
 const LAST_SYNC_KEY = 'household-budget-last-sync'
+const ICLOUD_SYNC_ENABLED_KEY = 'household-budget-icloud-sync-enabled'
 
 const CLOUD_KEY = 'household-budget-snapshot.json'
 const ICLOUD_CONTAINER_ID = 'iCloud.com.magicmirrorcreative.householdbudget'
@@ -99,6 +100,24 @@ async function setLastSyncState(update: Partial<LastSyncState>) {
   }
 }
 
+/** iCloud sync is off by default. User must enable it in Settings. */
+export async function getICloudSyncEnabled(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(ICLOUD_SYNC_ENABLED_KEY)
+    return raw === 'true'
+  } catch {
+    return false
+  }
+}
+
+export async function setICloudSyncEnabled(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ICLOUD_SYNC_ENABLED_KEY, enabled ? 'true' : 'false')
+  } catch {
+    // ignore
+  }
+}
+
 export async function isICloudAvailable(): Promise<boolean> {
   const cloud = await getCloudStore()
   if (!cloud || typeof (cloud as any).isICloudAvailable !== 'function')
@@ -108,6 +127,13 @@ export async function isICloudAvailable(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/** Pushes to iCloud only if the user has enabled iCloud sync in Settings. Fire-and-forget. */
+export function pushCloudSnapshotIfEnabled(): void {
+  getICloudSyncEnabled().then((enabled) => {
+    if (enabled) void pushCloudSnapshot()
+  })
 }
 
 export async function pushCloudSnapshot(): Promise<PushResult> {

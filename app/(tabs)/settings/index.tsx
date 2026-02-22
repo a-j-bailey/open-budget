@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Sun, Moon, Smartphone } from 'lucide-react-native'
 import { useThemeContext } from '../../../contexts/ThemeContext'
 import type { Theme } from '../../../hooks/useTheme'
-import { getLastSyncState, isICloudAvailable, type LastSyncState } from '../../../lib/cloudSync'
+import {
+  getICloudSyncEnabled,
+  getLastSyncState,
+  isICloudAvailable,
+  setICloudSyncEnabled,
+  type LastSyncState,
+} from '../../../lib/cloudSync'
 
 const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
@@ -155,11 +161,19 @@ export default function SettingsScreen() {
 
   const [lastSync, setLastSync] = useState<LastSyncState>({})
   const [iCloudAvailable, setICloudAvailable] = useState<boolean | null>(null)
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(false)
+  const [syncEnabledLoading, setSyncEnabledLoading] = useState(true)
 
   const loadSyncState = useCallback(async () => {
-    const [state, available] = await Promise.all([getLastSyncState(), isICloudAvailable()])
+    const [state, available, enabled] = await Promise.all([
+      getLastSyncState(),
+      isICloudAvailable(),
+      getICloudSyncEnabled(),
+    ])
     setLastSync(state)
     setICloudAvailable(available)
+    setSyncEnabled(enabled)
+    setSyncEnabledLoading(false)
   }, [])
 
   useEffect(() => {
@@ -197,32 +211,49 @@ export default function SettingsScreen() {
         title="iCloud Sync"
         isDark={isDark}
         headerRight={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor:
-                  iCloudAvailable === null
-                    ? muted
-                    : iCloudAvailable
-                      ? '#22c55e'
-                      : '#ef4444',
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor:
+                    iCloudAvailable === null
+                      ? muted
+                      : iCloudAvailable
+                        ? '#22c55e'
+                        : '#ef4444',
+                }}
+              />
+              <Text style={{ fontSize: 12, color: muted }}>
+                {iCloudAvailable === null
+                  ? 'Checking…'
+                  : iCloudAvailable
+                    ? 'Available'
+                    : 'Unavailable'}
+              </Text>
+            </View>
+            <Switch
+              value={syncEnabled}
+              onValueChange={async (value) => {
+                await setICloudSyncEnabled(value)
+                setSyncEnabled(value)
               }}
+              disabled={syncEnabledLoading}
+              trackColor={{ false: isDark ? '#44403c' : '#d6d3d1', true: isDark ? '#22c55e' : '#4ade80' }}
+              thumbColor={isDark ? '#fafaf9' : '#ffffff'}
             />
-            <Text style={{ fontSize: 12, color: muted }}>
-              {iCloudAvailable === null
-                ? 'Checking…'
-                : iCloudAvailable
-                  ? 'Available'
-                  : 'Unavailable'}
-            </Text>
           </View>
         }
       >
         <View style={{ gap: 12 }}>
-          {iCloudAvailable === false && (
+          {!syncEnabled && (
+            <Text style={{ fontSize: 14, color: muted }}>
+              Sync is off. Turn on to use Push/Pull in the Dev menu and to pull from iCloud on app launch.
+            </Text>
+          )}
+          {syncEnabled && iCloudAvailable === false && (
             <View
               style={{
                 paddingVertical: 10,
@@ -244,9 +275,11 @@ export default function SettingsScreen() {
               </Text>
             </View>
           )}
-          <Text style={{ fontSize: 14, color: muted }}>
-            Last sync: {formatSyncTime(lastSyncTime)}
-          </Text>
+          {syncEnabled && (
+            <Text style={{ fontSize: 14, color: muted }}>
+              Last sync: {formatSyncTime(lastSyncTime)}
+            </Text>
+          )}
         </View>
       </SectionCard>
 

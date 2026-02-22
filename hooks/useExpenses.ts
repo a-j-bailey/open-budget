@@ -8,7 +8,7 @@ import {
   listExpenseMonths,
   replaceExpensesForMonth,
 } from '../lib/db'
-import { pushCloudSnapshot } from '../lib/cloudSync'
+import { pushCloudSnapshotIfEnabled } from '../lib/cloudSync'
 
 function expenseKey(row: ExpenseRow): string {
   return `${row.transactionDate}|${row.description}|${row.debit}|${row.credit}`
@@ -45,7 +45,7 @@ export function useExpenses(selectedMonthKey: string) {
       setError(null)
       try {
         await replaceExpensesForMonth(selectedMonthKey, rows)
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         setExpenses(rows)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save expenses')
@@ -95,7 +95,7 @@ export function useExpenses(selectedMonthKey: string) {
         merged.sort((a, b) => (b.transactionDate || '').localeCompare(a.transactionDate || ''))
         await replaceExpensesForMonth(m, merged)
       }
-      await pushCloudSnapshot()
+      pushCloudSnapshotIfEnabled()
 
       if (byMonth.has(selectedMonthKey)) {
         setExpenses(await getExpensesByMonth(selectedMonthKey))

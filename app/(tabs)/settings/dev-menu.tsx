@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router'
 import { NativeButton } from '../../../components/swift-ui'
 import { useThemeContext } from '../../../contexts/ThemeContext'
 import {
+  getICloudSyncEnabled,
   getLastSyncState,
   isICloudAvailable,
   pushCloudSnapshot,
@@ -87,12 +88,18 @@ export default function DevMenuScreen() {
   const [pullLoading, setPullLoading] = useState(false)
   const [lastSync, setLastSync] = useState<LastSyncState>({})
   const [iCloudAvailable, setICloudAvailable] = useState<boolean | null>(null)
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(false)
   const [syncMessage, setSyncMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   const loadSyncState = useCallback(async () => {
-    const [state, available] = await Promise.all([getLastSyncState(), isICloudAvailable()])
+    const [state, available, enabled] = await Promise.all([
+      getLastSyncState(),
+      isICloudAvailable(),
+      getICloudSyncEnabled(),
+    ])
     setLastSync(state)
     setICloudAvailable(available)
+    setSyncEnabled(enabled)
   }, [])
 
   useEffect(() => {
@@ -195,7 +202,12 @@ export default function DevMenuScreen() {
         }
       >
         <View style={{ gap: 12 }}>
-          {iCloudAvailable === false && (
+          {!syncEnabled && (
+            <Text style={{ fontSize: 14, color: muted }}>
+              iCloud sync is off. Enable it in Settings to use Push/Pull here.
+            </Text>
+          )}
+          {syncEnabled && iCloudAvailable === false && (
             <View
               style={{
                 paddingVertical: 10,
@@ -241,13 +253,13 @@ export default function DevMenuScreen() {
             </View>
           )}
 
-          {iCloudAvailable === true && (
+          {syncEnabled && iCloudAvailable === true && (
             <>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <NativeButton
                   label={pushLoading ? 'Pushing…' : 'Push to iCloud'}
                   onPress={handlePush}
-                  disabled={iCloudAvailable !== true || pushLoading || pullLoading}
+                  disabled={pushLoading || pullLoading}
                   iosButtonStyle="borderedProminent"
                   fallbackBackgroundColor={pushLoading ? '#94a3b8' : '#0ea5e9'}
                   fallbackTextColor="#ffffff"
@@ -256,7 +268,7 @@ export default function DevMenuScreen() {
                 <NativeButton
                   label={pullLoading ? 'Pulling…' : 'Pull from iCloud'}
                   onPress={handlePull}
-                  disabled={iCloudAvailable !== true || pushLoading || pullLoading}
+                  disabled={pushLoading || pullLoading}
                   iosButtonStyle="borderedProminent"
                   fallbackBackgroundColor={pullLoading ? '#94a3b8' : '#10b981'}
                   fallbackTextColor="#ffffff"

@@ -6,7 +6,7 @@ import { vexo } from 'vexo-analytics'
 import { ThemeProvider, useThemeContext } from '../contexts/ThemeContext'
 import { MonthProvider } from '../contexts/MonthContext'
 import { initDb } from '../lib/db'
-import { syncFromCloudIfAvailable } from '../lib/cloudSync'
+import { getICloudSyncEnabled, syncFromCloudIfAvailable } from '../lib/cloudSync'
 
 function RootLayoutInner() {
   const { isDark } = useThemeContext()
@@ -23,7 +23,10 @@ export default function RootLayout() {
   useEffect(() => {
     const appId = process.env.EXPO_PUBLIC_VEXO_APP_ID
     if (appId) vexo(appId)
-    initDb().then(() => syncFromCloudIfAvailable())
+    initDb().then(async () => {
+      const syncEnabled = await getICloudSyncEnabled()
+      if (syncEnabled) await syncFromCloudIfAvailable()
+    })
   }, [])
 
   return (

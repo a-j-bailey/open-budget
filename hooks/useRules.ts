@@ -6,7 +6,7 @@ import {
   insertRule,
   updateRule as updateRuleDb,
 } from '../lib/db'
-import { pushCloudSnapshot } from '../lib/cloudSync'
+import { pushCloudSnapshotIfEnabled } from '../lib/cloudSync'
 
 const defaultRules: RulesConfig = { rules: [] }
 
@@ -41,7 +41,7 @@ export function useRules() {
       setError(null)
       try {
         await insertRule({ ...rule, id: makeId() })
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save rules')
@@ -55,7 +55,7 @@ export function useRules() {
       setError(null)
       try {
         await updateRuleDb(id, updates)
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save rules')
@@ -69,7 +69,7 @@ export function useRules() {
       setError(null)
       try {
         await deleteRuleDb(id)
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save rules')

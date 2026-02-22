@@ -6,7 +6,7 @@ import {
   updateCategory as updateCategoryDb,
   deleteCategory as deleteCategoryDb,
 } from '../lib/db'
-import { pushCloudSnapshot } from '../lib/cloudSync'
+import { pushCloudSnapshotIfEnabled } from '../lib/cloudSync'
 
 const defaultConfig: BudgetConfig = { categories: [] }
 
@@ -42,7 +42,7 @@ export function useBudget() {
       setError(null)
       try {
         await insertCategory({ id: makeId(), name, monthlyLimit, type })
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save config')
@@ -56,7 +56,7 @@ export function useBudget() {
       setError(null)
       try {
         await updateCategoryDb(id, updates)
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save config')
@@ -70,7 +70,7 @@ export function useBudget() {
       setError(null)
       try {
         await deleteCategoryDb(id)
-        await pushCloudSnapshot()
+        pushCloudSnapshotIfEnabled()
         await load()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to save config')
