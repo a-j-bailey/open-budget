@@ -2,7 +2,7 @@
   "expo": {
     "name": "OpenBudget",
     "slug": "household-budget",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "default",
     "icon": "./resources/icon.png",
     "scheme": "household-budget",
