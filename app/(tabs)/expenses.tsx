@@ -3,6 +3,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Switch,
@@ -24,6 +25,7 @@ import { useExpenses } from '../../hooks/useExpenses'
 import { useBudget } from '../../hooks/useBudget'
 import { useRules, applyRules } from '../../hooks/useRules'
 import { useThemeContext } from '../../contexts/ThemeContext'
+import { syncFromCloudIfAvailable } from '../../lib/cloudSync'
 import { Tabs } from 'expo-router'
 
 const GROUP_RADIUS = 12
@@ -60,14 +62,26 @@ export default function ExpensesScreen() {
     expenses,
     loading,
     error,
+    reload: reloadExpenses,
     importAndMerge,
     updateRow,
     deleteRow,
     setAllExpenses,
     addExpense,
   } = useExpenses(selectedMonth)
-  const { categories } = useBudget()
-  const { rules } = useRules()
+  const { categories, reload: reloadBudget } = useBudget()
+  const { rules, reload: reloadRules } = useRules()
+
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await syncFromCloudIfAvailable()
+      await Promise.all([reloadExpenses(), reloadBudget(), reloadRules()])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [reloadExpenses, reloadBudget, reloadRules])
 
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -239,6 +253,9 @@ export default function ExpensesScreen() {
           padding: 12,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Action bar: primary and secondary buttons */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>

@@ -1,6 +1,6 @@
 import { Tabs, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowDownCircle, ArrowUpCircle, TrendingDown, TrendingUp } from 'lucide-react-native'
 import { useBudget } from '../../hooks/useBudget'
@@ -16,12 +16,24 @@ import {
   TotalByMonthChart,
 } from '../../components/ChartPanel'
 import { OnboardingScreen } from '../../components/OnboardingScreen'
+import { syncFromCloudIfAvailable } from '../../lib/cloudSync'
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets()
-  const { categories } = useBudget()
+  const { categories, reload: reloadBudget } = useBudget()
   const { expenses, loading, reload } = useAllExpenses()
   const { selectedMonth } = useMonth()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await syncFromCloudIfAvailable()
+      await Promise.all([reload(), reloadBudget()])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [reload, reloadBudget])
 
   // Refetch when this tab gains focus so we don't show onboarding with stale empty state
   // (e.g. if DB wasn't ready on first mount or user added data on another tab).
@@ -94,6 +106,9 @@ export default function Dashboard() {
           gap: 14,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Month summary hero card */}
         <SectionCard title={selectedMonth ?? ''} isDark={isDark}>
