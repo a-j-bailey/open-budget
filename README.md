@@ -63,12 +63,26 @@ npm run ios
 
 ## Production builds (EAS)
 
+**Build only:**
+
 ```bash
 npm run build:preview
 npm run build:prod
 ```
 
-Use `eas submit` for App Store submission after production builds.
+**Build and submit to TestFlight (one command):**
+
+```bash
+eas build --profile production --platform ios --auto-submit
+```
+
+This runs a production iOS build and, when the build finishes, automatically submits it to App Store Connect (TestFlight). You’ll be prompted for Apple ID and App Store Connect App ID on first run (or add them to `eas.json` under `submit.production`). After the build appears in App Store Connect, submit it for App Store review from the App Store tab when ready.
+
+To build first and submit later, use `npm run build:prod`, then:
+
+```bash
+eas submit --platform ios --latest
+```
 
 ## iPad + macOS (Catalyst / Designed for iPad)
 
