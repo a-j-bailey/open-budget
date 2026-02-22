@@ -1,4 +1,4 @@
-import { Tabs, useFocusEffect } from 'expo-router'
+import { Link, Tabs, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -247,6 +247,7 @@ export default function Dashboard() {
         </SectionCard>
 
         <View style={{ gap: 14 }}>
+          <Link href="./settings" >Settings</Link>
           <SpendingByCategoryPieChart
             data={chartDataByCategory}
             categories={categories}

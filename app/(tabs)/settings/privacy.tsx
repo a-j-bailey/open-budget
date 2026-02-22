@@ -1,5 +1,5 @@
 import { Asset } from 'expo-asset'
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import { useThemeContext } from '../../../contexts/ThemeContext'
@@ -181,7 +181,8 @@ async function loadMarkdownAsset(moduleId: number): Promise<string> {
   const asset = Asset.fromModule(moduleId)
   await asset.downloadAsync()
   if (!asset.localUri) throw new Error('Asset has no localUri')
-  return FileSystem.readAsStringAsync(asset.localUri)
+  const file = new File(asset.localUri)
+  return file.text()
 }
 
 export default function PrivacyScreen() {

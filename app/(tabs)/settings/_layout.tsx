@@ -37,6 +37,13 @@ export default function SettingsLayout() {
         }}
       />
       <Stack.Screen
+        name="privacy"
+        options={{
+          title: 'Privacy',
+          headerBackTitle: 'Settings',
+        }}
+      />
+      <Stack.Screen
         name="dev-menu"
         options={{
           title: 'Dev menu',
