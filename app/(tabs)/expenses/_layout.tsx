@@ -1,0 +1,28 @@
+import { Stack } from 'expo-router'
+import { useThemeContext } from '../../../contexts/ThemeContext'
+
+export default function ExpensesLayout() {
+  const { isDark } = useThemeContext()
+  const screenBg = isDark ? '#0c0a09' : '#fafaf9'
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: screenBg },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen
+        name="transaction"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.5, 1],
+          sheetInitialDetentIndex: 1,
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+        }}
+      />
+    </Stack>
+  )
+}

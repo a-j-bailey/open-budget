@@ -281,7 +281,7 @@ export default function SettingsScreen() {
           onPress={() => Linking.openURL('https://openbudget.userjot.com/?cursor=1&order=top&limit=10')}
           isDark={isDark}
         />
-        <NavRow label="Dev Menu" onPress={() => router.push('/settings/dev-menu')} isDark={isDark} />
+        <NavRow label="Advanced Menu" onPress={() => router.push('/settings/dev-menu')} isDark={isDark} />
       </Card>
     </ScrollView>
   )
