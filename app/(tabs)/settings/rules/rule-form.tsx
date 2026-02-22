@@ -1,17 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router } from 'expo-router'
-import { NativeButton, NativeTextField } from '../../../../components/swift-ui'
+import { Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui'
+import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
+import { Check } from 'lucide-react-native'
+import {
+  NativeButton,
+  NativeSegmentedPicker,
+  NativeTextField,
+  NativeToggle,
+} from '../../../../components/swift-ui'
 import { useThemeContext } from '../../../../contexts/ThemeContext'
 import { useRules } from '../../../../hooks/useRules'
 import { useBudget } from '../../../../hooks/useBudget'
 import { hapticImpact, hapticSelection } from '../../../../lib/haptics'
 
+const isIOS = process.env.EXPO_OS === 'ios'
 const INSET_H = 20
 const SECTION_GAP = 20
 const ROW_MIN_HEIGHT = 44
 const GROUP_RADIUS = 12
+const SECTION_LABEL_MB = 8
 
 export default function RuleFormScreen() {
   const insets = useSafeAreaInsets()
@@ -27,6 +37,9 @@ export default function RuleFormScreen() {
   const [source, setSource] = useState<'description' | 'category'>(existing?.source ?? 'description')
   const [targetCategoryId, setTargetCategoryId] = useState<string>(existing?.targetCategoryId ?? 'ignore')
 
+  const ignored = targetCategoryId === 'ignore'
+  const effectiveCategoryId = ignored ? categories[0]?.id ?? 'ignore' : targetCategoryId
+
   useEffect(() => {
     if (existing) {
       setPattern(existing.pattern)
@@ -34,6 +47,21 @@ export default function RuleFormScreen() {
       setTargetCategoryId(existing.targetCategoryId)
     }
   }, [existing?.id])
+
+  const categoryOptions = useMemo(
+    () => categories.filter((cat) => (cat.type ?? 'expense') === 'expense'),
+    [categories]
+  )
+
+  const setIgnored = (value: boolean) => {
+    if (value) {
+      setTargetCategoryId('ignore')
+    } else {
+      setTargetCategoryId(
+        effectiveCategoryId === 'ignore' ? categoryOptions[0]?.id ?? 'ignore' : effectiveCategoryId
+      )
+    }
+  }
 
   const bg = isDark ? '#1c1917' : '#ffffff'
   const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
@@ -60,6 +88,11 @@ export default function RuleFormScreen() {
     removeRule(id)
     router.back()
   }
+
+  const sourceOptions = [
+    { label: 'Description', value: 'description' as const },
+    { label: 'Category', value: 'category' as const },
+  ]
 
   return (
     <ScrollView
@@ -103,145 +136,185 @@ export default function RuleFormScreen() {
         />
       </View>
 
-      <View
-        style={{
-          backgroundColor: bg,
-          borderRadius: GROUP_RADIUS,
-          overflow: 'hidden',
-          borderCurve: 'continuous',
-        }}
-      >
+      {/* If expense matches: */}
+      <View>
+        <Text style={{ fontSize: 13, color: muted, marginBottom: SECTION_LABEL_MB }}>
+          If expense matches:
+        </Text>
         <View
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: ROW_MIN_HEIGHT,
-            paddingHorizontal: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: border,
+            backgroundColor: bg,
+            borderRadius: GROUP_RADIUS,
+            overflow: 'hidden',
+            borderCurve: 'continuous',
           }}
         >
-          <Text style={{ fontSize: 17, color: label, width: 100 }}>Pattern</Text>
-          <NativeTextField
-            value={pattern}
-            onChangeText={setPattern}
-            placeholder="e.g. Audible or /^AMZN/"
-            placeholderTextColor={muted}
-            align="right"
-            containerStyle={{ flex: 1 }}
-            inputStyle={{
-              flex: 1,
-              fontSize: 17,
-              color: label,
-              paddingVertical: 10,
-              paddingLeft: 8,
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: border,
             }}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: ROW_MIN_HEIGHT,
-            paddingHorizontal: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: border,
-          }}
-        >
-          <Text style={{ fontSize: 17, color: label, width: 100 }}>Match</Text>
-          <View style={{ flex: 1, flexDirection: 'row', gap: 8, justifyContent: 'flex-end' }}>
-            {(
-              [
-                { key: 'description' as const, label: 'Description' },
-                { key: 'category' as const, label: 'Category' },
-              ] as const
-            ).map(({ key, label: l }) => (
-              <Pressable
-                key={key}
-                onPress={() => {
-                  hapticSelection()
-                  setSource(key)
-                }}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  backgroundColor: source === key ? segmentActive : 'transparent',
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '500',
-                    color: source === key ? label : muted,
-                  }}
-                >
-                  {l}
-                </Text>
-              </Pressable>
-            ))}
+          >
+            <NativeSegmentedPicker
+              value={source}
+              options={sourceOptions}
+              onChange={(v) => setSource(v)}
+              containerStyle={{ marginBottom: 0 }}
+              fallbackBackgroundColor={segmentBg}
+              fallbackSelectedBackgroundColor={segmentActive}
+              fallbackTextColor={muted}
+              fallbackSelectedTextColor={label}
+            />
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              minHeight: ROW_MIN_HEIGHT,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+            }}
+          >
+            <Text style={{ fontSize: 17, color: label, width: 80 }}>Pattern</Text>
+            <NativeTextField
+              value={pattern}
+              onChangeText={setPattern}
+              placeholder="e.g. Audible or /^AMZN/"
+              placeholderTextColor={muted}
+              align="right"
+              containerStyle={{ flex: 1 }}
+              inputStyle={{
+                flex: 1,
+                fontSize: 17,
+                color: label,
+                paddingVertical: 10,
+                paddingLeft: 8,
+              }}
+            />
           </View>
         </View>
+      </View>
+
+      {/* Then Set: */}
+      <View>
+        <Text style={{ fontSize: 13, color: muted, marginBottom: SECTION_LABEL_MB }}>
+          Then Set:
+        </Text>
         <View
           style={{
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: border,
+            backgroundColor: bg,
+            borderRadius: GROUP_RADIUS,
+            overflow: 'hidden',
+            borderCurve: 'continuous',
           }}
         >
-          <Text style={{ fontSize: 13, color: muted, marginBottom: 8 }}>Then assign</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <Pressable
-              onPress={() => {
-                hapticSelection()
-                setTargetCategoryId('ignore')
-              }}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8,
-                backgroundColor: targetCategoryId === 'ignore' ? '#ff9500' : segmentBg,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '500',
-                  color: targetCategoryId === 'ignore' ? '#fff' : label,
-                }}
-              >
-                Ignore
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              minHeight: ROW_MIN_HEIGHT,
+              paddingHorizontal: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: border,
+            }}
+          >
+            <Text style={{ fontSize: 17, color: label, width: 100 }}>Category</Text>
+            {ignored ? (
+              <Text style={{ fontSize: 15, color: muted }}>—</Text>
+            ) : categoryOptions.length === 0 ? (
+              <Text style={{ fontSize: 14, color: muted }}>No categories</Text>
+            ) : isIOS ? (
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                <Host style={{ flex: 1, width: '100%' }}>
+                  <Picker<string>
+                    selection={targetCategoryId}
+                    onSelectionChange={(selection) => {
+                      hapticSelection()
+                      setTargetCategoryId(selection)
+                    }}
+                    modifiers={[pickerStyle('menu')]}
+                  >
+                    {categoryOptions.map((cat) => (
+                      <SwiftText key={cat.id} modifiers={[tag(cat.id)]}>
+                        {cat.name}
+                      </SwiftText>
+                    ))}
+                  </Picker>
+                </Host>
+              </View>
+            ) : (
+              <Text style={{ fontSize: 17, color: label }}>
+                {categoryOptions.find((c) => c.id === targetCategoryId)?.name ?? '—'}
               </Text>
-            </Pressable>
-            {categories.map((cat) => (
+            )}
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              minHeight: ROW_MIN_HEIGHT,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+            }}
+          >
+            <Text style={{ fontSize: 17, color: label }}>Ignored</Text>
+            <NativeToggle
+              value={ignored}
+              onValueChange={(v) => {
+                hapticSelection()
+                setIgnored(v)
+              }}
+              trackColor={{ false: isDark ? '#44403c' : '#d6d3d1', true: isDark ? '#ff9500' : '#ff9f0a' }}
+              thumbColor={isDark ? '#fafaf9' : '#ffffff'}
+            />
+          </View>
+        </View>
+      </View>
+
+      {!isIOS && !ignored && categoryOptions.length > 0 ? (
+        <View
+          style={{
+            backgroundColor: bg,
+            borderRadius: GROUP_RADIUS,
+            overflow: 'hidden',
+            borderCurve: 'continuous',
+          }}
+        >
+          {categoryOptions.map((cat, i) => {
+            const selected = targetCategoryId === cat.id
+            return (
               <Pressable
                 key={cat.id}
                 onPress={() => {
                   hapticSelection()
                   setTargetCategoryId(cat.id)
                 }}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  backgroundColor: targetCategoryId === cat.id ? '#0ea5e9' : segmentBg,
-                }}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: ROW_MIN_HEIGHT,
+                  paddingHorizontal: 16,
+                  borderTopWidth: i === 0 ? 0 : 1,
+                  borderTopColor: border,
+                  backgroundColor: pressed
+                    ? isDark
+                      ? 'rgba(255,255,255,0.06)'
+                      : 'rgba(0,0,0,0.04)'
+                    : 'transparent',
+                })}
               >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '500',
-                    color: targetCategoryId === cat.id ? '#fff' : label,
-                  }}
-                >
-                  {cat.name}
-                </Text>
+                <Text style={{ fontSize: 17, color: label }}>{cat.name}</Text>
+                {selected ? <Check size={22} color="#0a84ff" strokeWidth={2.5} /> : null}
               </Pressable>
-            ))}
-          </View>
+            )
+          })}
         </View>
-      </View>
+      ) : null}
 
       {isEdit && id ? (
         <View style={{ marginTop: 8 }}>
