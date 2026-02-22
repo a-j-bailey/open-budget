@@ -1,4 +1,4 @@
-import { Stack, Tabs, useFocusEffect } from 'expo-router'
+import { Tabs, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,6 +9,7 @@ import { useMonthlyTotals, useMonthlyTotalsForMonth } from '../../hooks/useMonth
 import { useMonth } from '../../contexts/MonthContext'
 import { useThemeContext } from '../../contexts/ThemeContext'
 import { MonthSelector } from '../../components/MonthSelector'
+import { SectionCard } from '../../components/SectionCard'
 import {
   SpendingByCategoryLineChart,
   SpendingByCategoryPieChart,
@@ -39,14 +40,12 @@ export default function Dashboard() {
     return <OnboardingScreen />
   }
 
-  const cardShadow = isDark ? { boxShadow: '0 1px 3px rgba(0,0,0,0.4)' } : { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
-  const bg = isDark ? '#1c1917' : '#fff'
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
   const titleColor = isDark ? '#fafaf9' : '#1c1917'
   const mutedColor = isDark ? '#a8a29e' : '#78716c'
   const bodyColor = isDark ? '#d6d3d1' : '#44403c'
   const segmentActiveBg = isDark ? '#44403c' : '#e7e5e4'
   const barBg = isDark ? '#292524' : '#e7e5e4'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   const prevMonthKey =
     selectedMonth &&
@@ -97,28 +96,7 @@ export default function Dashboard() {
         showsVerticalScrollIndicator={false}
       >
         {/* Month summary hero card */}
-        <View
-          style={{
-            backgroundColor: bg,
-            borderRadius: 14,
-            borderCurve: 'continuous',
-            padding: 14,
-            borderWidth: 1,
-            borderColor: border,
-            ...cardShadow,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              color: mutedColor,
-              marginBottom: 10,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
-            {selectedMonth}
-          </Text>
+        <SectionCard title={selectedMonth ?? ''} isDark={isDark}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <ArrowDownCircle size={20} color="#16a34a" />
             <Text style={{ fontSize: 15, color: bodyColor, flex: 1 }}>Income</Text>
@@ -153,24 +131,13 @@ export default function Dashboard() {
               {(net >= 0 ? '+' : '')}${net.toFixed(2)}
             </Text>
           </View>
-        </View>
+        </SectionCard>
 
         {/* By category */}
-        <View
-          style={{
-            backgroundColor: bg,
-            borderRadius: 14,
-            borderCurve: 'continuous',
-            padding: 14,
-            borderWidth: 1,
-            borderColor: border,
-            ...cardShadow,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: titleColor }}>
-              By category
-            </Text>
+        <SectionCard
+          title="By category"
+          isDark={isDark}
+          headerRight={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Pressable
                 onPress={() => setCategoryTab('income')}
@@ -211,7 +178,8 @@ export default function Dashboard() {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          }
+        >
           {visible.length === 0 ? (
             <Text style={{ fontSize: 14, color: mutedColor }}>No categories yet.</Text>
           ) : (
@@ -261,7 +229,7 @@ export default function Dashboard() {
               )
             })
           )}
-        </View>
+        </SectionCard>
 
         <View style={{ gap: 14 }}>
           <SpendingByCategoryPieChart

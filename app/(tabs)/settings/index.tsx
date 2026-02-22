@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native'
+import { Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Sun, Moon, Smartphone } from 'lucide-react-native'
@@ -12,59 +12,7 @@ import {
   setICloudSyncEnabled,
   type LastSyncState,
 } from '../../../lib/cloudSync'
-
-const cardShadow = { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
-const cardShadowDark = { boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }
-
-function SectionCard({
-  title,
-  headerRight,
-  children,
-  isDark,
-}: {
-  title: string
-  headerRight?: React.ReactNode
-  children?: React.ReactNode
-  isDark: boolean
-}) {
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  const bg = isDark ? '#1c1917' : '#ffffff'
-  return (
-    <View
-      style={{
-        backgroundColor: bg,
-        borderRadius: 14,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: border,
-        ...(isDark ? cardShadowDark : cardShadow),
-      }}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: children != null ? 10 : 0,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: isDark ? '#a8a29e' : '#78716c',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-          }}
-        >
-          {title}
-        </Text>
-        {headerRight}
-      </View>
-      {children}
-    </View>
-  )
-}
+import { SectionCard } from '../../../components/SectionCard'
 
 function formatSyncTime(iso: string | undefined) {
   if (!iso) return 'Never'
@@ -286,6 +234,18 @@ export default function SettingsScreen() {
       <SectionCard title="Manage" isDark={isDark}>
         <NavRow label="Rules" onPress={() => router.push('/settings/rules')} isDark={isDark} />
         <NavRow label="Budget" onPress={() => router.push('/settings/budget')} isDark={isDark} />
+      </SectionCard>
+
+      <SectionCard title="About" isDark={isDark}>
+        <NavRow label="Privacy policy" onPress={() => router.push('/(tabs)/settings/privacy')} isDark={isDark} />
+      </SectionCard>
+
+      <SectionCard title="Feedback" isDark={isDark}>
+        <NavRow
+          label="Feedback & feature requests"
+          onPress={() => Linking.openURL('https://openbudget.userjot.com/?cursor=1&order=top&limit=10')}
+          isDark={isDark}
+        />
       </SectionCard>
 
       <SectionCard title="Advanced" isDark={isDark}>
