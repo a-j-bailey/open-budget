@@ -4,7 +4,6 @@ import { View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useEffect } from 'react'
-import { vexo } from 'vexo-analytics'
 import { ThemeProvider, useThemeContext } from '../contexts/ThemeContext'
 import { MonthProvider } from '../contexts/MonthContext'
 import { initDb } from '../lib/db'
@@ -23,9 +22,6 @@ function RootLayoutInner() {
 
 export default function RootLayout() {
   useEffect(() => {
-    if (__DEV__) return
-    const appId = process.env.EXPO_PUBLIC_VEXO_APP_ID
-    if (appId) vexo(appId)
     initDb().then(async () => {
       const syncEnabled = await getICloudSyncEnabled()
       if (syncEnabled) await syncFromCloudIfAvailable()
